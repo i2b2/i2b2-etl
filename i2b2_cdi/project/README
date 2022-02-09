@@ -1,0 +1,14 @@
+### Create project and user
+Create new project & user along with password , also assign new project to new user.
+
+docker run --rm -it -v $PWD:/usr/src/app -v /var/run/docker.sock:/var/run/docker.sock --name i2b2-etl-test --network i2b2-net reg.devi2b2c.org/i2b2-etl:latest python -m i2b2_cdi project add -c etl.env --project-name i2b2_demo1 
+
+### Load data into project
+Load data from one project to another
+
+docker run --rm -it -v $PWD:/usr/src/app -v /var/run/docker.sock:/var/run/docker.sock --name i2b2-etl-test --network i2b2-net reg.devi2b2c.org/i2b2-etl:latest python -m i2b2_cdi project load -c etl.env --project-name i2b2_demo1 
+
+### Change user password
+Change password for users.
+
+docker run --rm -it -v $PWD:/usr/src/app -v /var/run/docker.sock:/var/run/docker.sock --name i2b2-etl-test --network i2b2-net reg.devi2b2c.org/i2b2-etl:latest python -m i2b2_cdi project password -c etl.env --user demo --password i2b2@2020
