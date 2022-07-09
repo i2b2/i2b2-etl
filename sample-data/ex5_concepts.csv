@@ -1,0 +1,3 @@
+path,code,type
+/Labs/Blood/Blood-Glucose,GLU,integer
+/Diagnosis/Diabetes-Mellitus,DM,assertion
