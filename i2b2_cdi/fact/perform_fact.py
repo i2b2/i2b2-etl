@@ -16,6 +16,8 @@
 
 """
 
+# from glob import glob
+import glob
 from pathlib import Path
 from i2b2_cdi.fact import deid_fact as DeidFact
 from i2b2_cdi.fact import transform_file as TransformFile
@@ -27,156 +29,123 @@ from i2b2_cdi.fact import delete_fact
 from i2b2_cdi.config.config import Config
 from i2b2_cdi.fact import concept_cd_map as ConceptCdMap
 import time
+import pandas as pd
+import numpy as np
+from i2b2_cdi.fact.TimeAnalysiswithDecorator import total_time
+import os
 
-def delete_facts():
-    """Delete the facts from i2b2 instance"""
-    logger.debug("Deleting facts")
-    try:
-        delete_fact.delete_facts_i2b2_demodata()
-        logger.success(SUCCESS)
-    except Exception as e:
-        logger.error("Failed to delete facts : {}", e)
-        raise
-
-def undo_facts():
-    logger.debug("Deleting facts (undo operation)")
-    try:
-        delete_fact.facts_delete_by_id()
-        logger.success(SUCCESS)
-        
-    except Exception as e:
-        logger.error("Failed to delete facts : {}", e)
-        raise
-
-
-
-def load_facts(file_list):
+def load_facts(file_list,config):
     """Load the facts from the given file to the i2b2 instance using bcp tool.
 
     Args:
         file_list (:obj:`str`, mandatory): List of files from which facts to be imported
 
     """
+    
     try:
         # Get concept_cd map for fact validation and to decide column
         concept_map = {}
-        if not Config.config.disable_fact_validation:
-            concept_map = ConceptCdMap.get_concept_code_mapping()
+        factsErrorsList = []
+        if not config.disable_fact_validation:
+            concept_map = ConceptCdMap.get_concept_code_mapping(config)
         for _file in file_list:
             extractFileName = _file.split("/")
             extractFileName = extractFileName[-1]
             filename="/usr/src/app/tmp/"+"log_"+extractFileName  
-            f = open(filename, "a")
-            start = time.time()
-            deid_file_path = de_identify_facts(_file, concept_map)
-            end = time.time()  
-            f.write("de_identify_facts || facts"+ ","+str(end-start)[:4]+"\n")
+        
+            deid_file_path, error_file_path = DeidFact.do_deidentify(_file, concept_map,config)
+            logger.debug("Check error logs of fact de-identification if any : " + error_file_path)
+            factsErrorsList.append(error_file_path)
+            bcp_file_path = TransformFile.csv_to_bcp(deid_file_path, concept_map, config)
 
-            start = time.time()
-            bcp_file_path = convert_csv_to_bcp(deid_file_path, concept_map)
-            end = time.time()  
-            f.write("convert_csv_to_bcp || facts"+  ","+str(end-start)[:4]+"\n")
-
-            start = time.time()
-            bcp_upload(bcp_file_path)
-            end = time.time()  
-            f.write("bcp_upload || facts "+  ","+str(end-start)[:4]+"\n")
-            f.close()
+            for f in glob.glob(bcp_file_path+'/observation_*.bcp'):
+                bcp_upload(f, config)
+                os.remove(f)
+            
+            if(str(config.crc_db_type)=='pg'):
+                create_indexes = Path('i2b2_cdi/resources/sql') / \
+                'create_indexes_observation_fact_pg.sql'
+                pyBcp = PyBCP(
+                table_name='observation_fact',
+                import_file=bcp_file_path,
+                delimiter=str(config.bcp_delimiter),
+                batch_size=10000,
+                error_file="/usr/src/app/tmp/benchmark/logs/error_bcp_facts.log")
+                
+                pyBcp.execute_sql_pg(create_indexes, config)
         logger.success(SUCCESS)
+        return factsErrorsList
     except Exception as e:
         logger.error("Failed to load facts : {}", e)
         raise
 
-
-def de_identify_facts(obs_file_path, concept_map):
-    """DeIdentify the fact data
-
-    Args:
-        file_path (:obj:`str`, mandatory): Path to the file which needs to be deidentified
-
-    Returns:
-        str: path to the deidentified file
-
-    """
-    logger.debug("De-identifying facts")
-    try:
-        deid_file_path, error_file_path = DeidFact.do_deidentify(obs_file_path, concept_map)
-
-        logger.debug(
-            "Check error logs of fact de-identification if any : " + error_file_path)
-        return deid_file_path
-    except Exception as e:
-        logger.error("Failed to deidentify the facts : {}", e)
-        raise
-
-
-def convert_csv_to_bcp(deid_file_path, concept_map):
-    """Transform the cdi fact file to the bcp fact file
-
-    Args:
-        deid_file_path (:obj:`str`, mandatory): Path to the deidentified file which needs to be converted to bcp file
-
-    Returns:
-        str: path to the bcp file
-
-    """
-    logger.debug("Converting CSV file to BCP format")
-    try:
-        #print("============>>> deid_file_path======>>>>>>",deid_file_path)
-        bcp_file_path = TransformFile.csv_to_bcp(deid_file_path, concept_map)
-        return bcp_file_path
-    except Exception as e:
-        logger.error("Failed to convert CSV to BCP : {}", e)
-        raise
-
-
-def bcp_upload(bcp_file_path):
+@total_time
+def bcp_upload(bcp_file_path,config):
     """Upload the fact data from bcp file to the i2b2 instance
 
     Args:
         bcp_file_path (:obj:`str`, mandatory): Path to the bcp file having fact data
 
     """
+    logger.debug('entering bcp_upload')
     logger.debug("Uploading facts using BCP")
     base_dir = str(Path(bcp_file_path).parents[2])
     try:
+        if(str(config.crc_db_type)=='pg'):
+            fact_table_name='observation_fact'
+        elif(str(config.crc_db_type)=='mssql'):
+            fact_table_name='observation_fact_numbered'
+        
         _bcp = PyBCP(
-            table_name="observation_fact_numbered",
+            table_name=fact_table_name,
             import_file=bcp_file_path,
-            delimiter=str(Config.config.bcp_delimiter),
+            delimiter=str(config.bcp_delimiter),
             batch_size=10000,
             error_file=base_dir + "/logs/error_bcp_facts.log")
 
-        if(str(Config.config.crc_db_type)=='pg'):
-            create_table_path = Path('i2b2_cdi/resources/sql') / \
-            'create_observation_fact_numbered_pg.sql'
-            load_fact_path = Path('i2b2_cdi/resources/sql') / \
-            'load_observation_fact_from_numbered_pg.sql'
-            _bcp.execute_sql_pg(create_table_path)
-            _bcp.upload_facts_pg()        
-            _bcp.execute_sql_pg(load_fact_path)
-        elif(str(Config.config.crc_db_type)=='mssql'):
+        if(str(config.crc_db_type)=='pg'):
+            drop_indexes = Path('i2b2_cdi/resources/sql') / \
+            'drop_indexes_observation_fact_pg.sql'
+            create_indexes = Path('i2b2_cdi/resources/sql') / \
+            'create_indexes_observation_fact_pg.sql'
+            _bcp.execute_sql_pg(drop_indexes,config)
+            logger.info("Dropped indexes from observation_fact")
+            _bcp.upload_facts_pg(config)        
+        elif(str(config.crc_db_type)=='mssql'):
             create_table_path = Path('i2b2_cdi/resources/sql') / \
             'create_observation_fact_numbered.sql'
             load_fact_path = Path('i2b2_cdi/resources/sql') / \
             'load_observation_fact_from_numbered.sql'
-            _bcp.execute_sql(create_table_path)
-            _bcp.upload_facts_sql()
-            _bcp.execute_sql(load_fact_path)
+            _bcp.execute_sql(create_table_path,config )
+            _bcp.upload_facts_sql(config)
+            _bcp.execute_sql(load_fact_path,config)
+            
+        logger.debug('exiting bcp_upload')
+        logger.debug('Completed bcp_upload for file:-')
+        logger.debug(bcp_file_path)
             
     except Exception as e:
         logger.error("Failed to uplaod facts using BCP : {}", e)
         raise
 
 
-if __name__ == "__main__":
-    args = get_argument_parser()
 
-    if args.delete_facts:
-        delete_facts()
-    elif args.fact_file:
-        # Check database connection before load
-        demodata_connection = I2b2crcDataSource()
-        demodata_connection.check_database_connection()
-        load_facts(args.fact_file.name)
-        args.fact_file.close()
+
+
+
+
+            
+
+
+
+# if __name__ == "__main__":
+#     args = get_argument_parser()
+
+#     if args.delete_facts:
+#         delete_facts()
+#     elif args.fact_file:
+#         # Check database connection before load
+#         demodata_connection = I2b2crcDataSource()
+#         demodata_connection.check_database_connection()
+#         load_facts(args.fact_file.name)
+#         args.fact_file.close()

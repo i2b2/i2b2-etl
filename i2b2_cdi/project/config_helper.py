@@ -51,6 +51,14 @@ def appendConfigParser(parserLk):
     upgrade_p=subparser.add_parser('upgrade',parents=[parserLk['all_parent_p'],parserLk['ont_parent_p'],parserLk['crc_parent_p'],parserLk['pm_parent_p'],parserLk['hive_parent_p']],help='Upgrade project db structure',default_config_files=default_config_files)      
     upgrade_p.add('--project-name', type=str, action='store',default='demo',help='Project name to be upgraded')
 
+    create_tables_p=subparser.add_parser('project_init',parents=[parserLk['all_parent_p'],parserLk['ont_parent_p'],parserLk['crc_parent_p'],parserLk['pm_parent_p'],parserLk['hive_parent_p']],help='Creating i2b2 tables in provided database',default_config_files=default_config_files)      
+    create_tables_p.add('--database-name', type=str, action='store',default='demo',help='Database name to copy the tables')
+    create_tables_p.add('--host', type=str, action='store',default='localhost',help='Database host')
+    create_tables_p.add('--user-name', type=str, action='store',default='SA',help='User name to connect database')
+    create_tables_p.add('--password', type=str, action='store',default='<YourStrong@Passw0rd>',help='Database password')
+    create_tables_p.add('--port', type=str, action='store',default='1433',help='Port ')
+
+
     return main_sps
 
 def get_random_string(length):

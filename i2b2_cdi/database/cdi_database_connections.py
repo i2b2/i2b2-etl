@@ -29,9 +29,8 @@ from loguru import logger
 class I2b2crcDataSource(DataSource):
     """Provided connection to the i2b2demodata database"""
 
-    def __init__(self):
+    def __init__(self,config):
         
-        config=Config.config
         self.ip = config.crc_db_host 
         self.port= config.crc_db_port
         self.database = config.crc_db_name
@@ -39,9 +38,9 @@ class I2b2crcDataSource(DataSource):
         self.password = config.crc_db_pass
                 
         logger.debug("connection to:{}",self.ip)
-        super().__init__(self.ip,self.port, self.database, self.username, self.password)
+        super().__init__(self.ip,self.port, self.database, self.username, self.password,config.crc_db_type)
 
-    def check_database_connection(self):
+    def check_database_connection(self,args):
         try:
             provided_timeout = None
             if provided_timeout is None:
@@ -59,7 +58,7 @@ class I2b2crcDataSource(DataSource):
                         raise TimeoutError(
                             "connection to database server taking longer than usual")
 
-                    with I2b2crcDataSource() as cursor:
+                    with I2b2crcDataSource(args) as cursor:
                         is_connected = False
                         logger.debug("Connected \u2714")
                         logger.debug(
@@ -79,15 +78,15 @@ class I2b2crcDataSource(DataSource):
 class I2b2metaDataSource(DataSource):
     """Provided connection to the i2b2metadata database"""
 
-    def __init__(self):
-        config=Config.config
+    def __init__(self,config):
+
         logger.debug("connecting to {},{}",config.ont_db_host , config.ont_db_port)
         self.ip = config.ont_db_host 
         self.port= config.ont_db_port
         self.database = config.ont_db_name
         self.username = config.ont_db_user
         self.password = config.ont_db_pass
-        super().__init__(self.ip, self.port, self.database, self.username, self.password)
+        super().__init__(self.ip, self.port, self.database, self.username, self.password,config.ont_db_type)
 
     def check_database_connection(self):
         pass
@@ -96,16 +95,16 @@ class I2b2metaDataSource(DataSource):
 class I2b2pmDataSource(DataSource):
     """Provided connection to the i2b2pmdata database"""
 
-    def __init__(self):
-        config=Config.config
+    def __init__(self,config):
+
         self.ip = config.pm_db_host 
         self.port = config.pm_db_port
         self.database = config.pm_db_name
         self.username = config.pm_db_user
         self.password = config.pm_db_pass
-        super().__init__(self.ip, self.port, self.database, self.username, self.password)
+        super().__init__(self.ip, self.port, self.database, self.username, self.password,config.pm_db_type)
 
-    def check_database_connection(self):
+    def check_database_connection(self,args):
         try:
             provided_timeout = None
             if provided_timeout is None:
@@ -123,7 +122,7 @@ class I2b2pmDataSource(DataSource):
                         raise TimeoutError(
                             "connection to database server taking longer than usual")
 
-                    with I2b2crcDataSource() as cursor:
+                    with I2b2crcDataSource(args) as cursor:
                         is_connected = False
                         logger.debug("Connected \u2714")
                         logger.debug(
@@ -142,14 +141,14 @@ class I2b2pmDataSource(DataSource):
 class I2b2hiveDataSource(DataSource):
     """Provided connection to the i2b2hivedata database"""
 
-    def __init__(self):
-        config=Config.config
+    def __init__(self,config):
+
         self.ip = config.hive_db_host 
         self.port= config.hive_db_port
         self.database = config.hive_db_name
         self.username = config.hive_db_user
         self.password = config.hive_db_pass
-        super().__init__(self.ip, self.port, self.database, self.username, self.password)
+        super().__init__(self.ip, self.port, self.database, self.username, self.password,config.hive_db_type)
 
     def check_database_connection(self):
         pass

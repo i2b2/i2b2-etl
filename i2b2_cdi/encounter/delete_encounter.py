@@ -18,8 +18,8 @@ from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 from i2b2_cdi.exception.cdi_database_error import CdiDatabaseError
 from i2b2_cdi.log import logger
 
-
-def delete_encounters():
+from i2b2_cdi.common.constants import *
+def delete_encounters(config):
     """Delete the encounters data from i2b2 instance"""
 
     try:
@@ -27,13 +27,14 @@ def delete_encounters():
             "Deleting data from visit_dimension")
         queries = ['truncate table visit_dimension']
 
-        with I2b2crcDataSource() as cursor:
+        with I2b2crcDataSource(config) as cursor:
             delete(cursor, queries)
+            logger.success(SUCCESS)
     except Exception as e:
         raise CdiDatabaseError("Couldn't delete data: {0}".format(str(e)))
 
 
-def delete_encounter_mapping():
+def delete_encounter_mapping(config):
     """Delete the encounter mapping from i2b2 instance"""
 
     try:
@@ -41,11 +42,11 @@ def delete_encounter_mapping():
             "Deleting data from encounter_mapping")
         queries = ['truncate table encounter_mapping']
 
-        with I2b2crcDataSource() as cursor:
+        with I2b2crcDataSource(config) as cursor:
             delete(cursor, queries)
+            logger.success(SUCCESS)
     except Exception as e:
         raise CdiDatabaseError("Couldn't delete data: {0}".format(str(e)))
-
 
 def delete(cursor, queries):
     """Execute the provided query using the database cursor

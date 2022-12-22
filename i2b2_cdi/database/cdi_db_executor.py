@@ -49,4 +49,21 @@ def getDataFrameInChunks(sql,dataSource,chunksize=10000):
             return df
         except Exception as e:
             logger.error("error in :{}",sql)
-        
+
+def getPdfUsingCursor(cursor,sql_query='select count(*) from observation_fact'):
+    try:
+        return pd.read_sql(sql_query, cursor.connection)
+    except Exception as e:  
+        logger.error("Error executing: {}",sql_query)
+        raise Exception('pyodbc exception:',e)
+
+def getDataFrameInChunksUsingCursor(cursor,sql,chunksize=10000):
+    try:
+        dfl=[]
+        for chunk in pd.read_sql_query(sql , cursor.connection, chunksize=chunksize):
+            dfl.append(chunk)
+        df = pd.concat(dfl, ignore_index=True)
+        return df
+    except Exception as e:
+        logger.error("error in :{}",sql)
+        raise Exception('pyodbc exception:',e)        

@@ -55,7 +55,6 @@ class TransformFile:
         # mallappa:: input arg data check
         
         
-        config=Config.config
         _valid_rows_arr = []
         max_line = file_len(csv_file_path) - 1
         try:
@@ -145,7 +144,7 @@ def csv_to_bcp(csv_file_path,csv_file_path_name):
         # Delete bcp and error file if already exists
         delete_file_if_exists(bcp_file_path)
         mkParentDir(bcp_file_path)
-        input_csv_delimiter = str(Config.config.csv_delimiter)
+        input_csv_delimiter = str(Config.config.csv_delimiter) # not using 
         output_bcp_delimiter = str(Config.config.bcp_delimiter)
         T.csv_to_bcp(csv_file_path, input_csv_delimiter,
                     bcp_file_path, output_bcp_delimiter)

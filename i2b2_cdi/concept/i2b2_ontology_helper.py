@@ -200,20 +200,26 @@ def find_error_in_row(row):
 
     if len(row['code'])>50:
         return 'length of concept code is >50'
+    
+    if row['code'] == '':
+        return 'concept_code is missing'
 
-    if row['path']=='':
-        return 'Missing Path'
+    if row['path']=='' or row['path']=='/':
+        return 'concept_path is missing'
 
     if row['concept_type'] is not None:
-        if row['concept_type'].lower() not in ['largestring','posinteger','float','integer','posfloat','string']\
+        if row['concept_type'].lower() not in ['largestring','posinteger','float','integer','posfloat','string','assertion']\
             and 'enum' not in row['concept_type'].lower()\
             and len(row['concept_type'])!=0:
             return 'concept_type is incorrect'
 
-    if row['definition_type'] is not None:
-        if row['definition_type'] and row['definition_type'].lower() not in ['sankey','tabulation','derived','derived-ml']:
-            return 'definition_type is incorrect'
+    # if row['definition_type'] is not None:
+    #     if row['definition_type'] and row['definition_type'].lower():
+    #         return 'definition_type is incorrect'
 
+    regex = r"([\\\\,\\,/,//]+)"
+    if re.findall(regex,row['code']):
+        return 'Slash was found in the concept code.'
 
     # if row['definition_type'] is not None and row['definition_type'].lower()=='derived' :
     #     if row['blob'] is None or row['blob']=='':
@@ -224,7 +230,7 @@ def find_error_in_row(row):
 
 
 
-def get_existing_Ont2():
+def get_existing_Ont2(config):
     """This method generates Hash from sql
         Args:
             args: options namespace     
@@ -233,8 +239,8 @@ def get_existing_Ont2():
   
     logger.debug('getting concepts from crc')
     try:
-        conn1 = I2b2crcDataSource()
-        with conn1 as conn:            
+        conn = I2b2crcDataSource(config)
+        with conn as conn:            
             lkDf = pd.read_sql_query("select distinct concept_path, concept_cd from concept_dimension",conn.connection) 
 
             logger.debug("DF from database {}",lkDf)
@@ -248,7 +254,7 @@ def get_existing_Ont2():
     except Exception as e:
         logger.exception(e)
 
-def get_concept_ontology_from_i2b2metadata(conceptDef,concept_map_df=None):
+def get_concept_ontology_from_i2b2metadata(config,conceptDef,concept_map_df=None):
     """
         Tranforms the conceptDefintion pandas dataframe into one which has the elements to display an Ontology
     
@@ -284,7 +290,7 @@ def get_concept_ontology_from_i2b2metadata(conceptDef,concept_map_df=None):
     codeLk={x['concept_path']:x['concept_code'] for idx,x in df.iterrows()}
     pathMap={}
 
-    existing_ont=get_existing_Ont2()
+    existing_ont=get_existing_Ont2(config)
     for k in existing_ont:
         v=existing_ont[k]
 
@@ -306,8 +312,9 @@ def get_concept_ontology_from_i2b2metadata(conceptDef,concept_map_df=None):
         # line_num=r['line_num']
         # input_file=r['input_file']
 
-        line_num=idx
-        input_file=idx
+        line_num=idx+1          #Updating line_num to make consistent for summarize function
+        # input_file=idx
+        input_file = r['input_file']
 
         if('definition_type' in df.columns and r['definition_type']=='DERIVED' and r['concept_blob']==''):
             logger.warning("Concept blob is empty for Derived concept")
@@ -326,8 +333,8 @@ def get_concept_ontology_from_i2b2metadata(conceptDef,concept_map_df=None):
         else:
             cdesc=''
 
-        if ctype=='assertion':
-            ctype=''
+        if ctype=='':
+            ctype='assertion'
             
         if 'concept_blob' in df.columns:
             cblob=r['concept_blob']
@@ -388,7 +395,6 @@ def get_concept_ontology_from_i2b2metadata(conceptDef,concept_map_df=None):
             logger.trace('completed {} of {}', count, len(df))
     df1=pd.DataFrame(arr,columns=["path","code","concept_type","concept_name","short_path","code_path","is_leaf","is_root","description","concept_unit","concept_blob","definition_type",'line_num','input_file'])
     
-    
     df1,errDf=filterErrors(df1)
     #logger.trace('ERROR:{}',errDf)
     
@@ -411,27 +417,20 @@ def filterErrors(df):
     logger.debug("df header:{}",list(df))
     
     for idx,r in df.iterrows():
+        logger.debug('filtering')
+        logger.debug(r)
         error=find_error_in_row(r)
         if error is not None:
-            errors.append(error,r)
+            a=[]
+            a.append(error)
+            for x in list(df):
+                a.append(r[x]) 
+            errors.append(a)
             arrIdx.append(False)
         else:
            arrIdx.append(True)
     return df[arrIdx],pd.DataFrame(errors,columns=['error']+list(df))
 
-
-def filterErrors(df):
-    (arrIdx,errors)=([],[])
-    logger.trace("df header:{}",list(df))
-    
-    for idx,r in df.iterrows():
-        error=find_error_in_row(r)
-        if error is not None:
-            #errors.append([error]+r)
-            arrIdx.append(False)
-        else:
-           arrIdx.append(True)
-    return df[arrIdx],pd.DataFrame(errors,columns=['error']+list(df))
 
 
 def processLeafRoot(conceptDef,existing_ont):

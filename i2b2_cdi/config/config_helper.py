@@ -36,7 +36,7 @@ def getDefaultUploadid():
     x=datetime.now()
     #return int(x.strftime("%y%m%d%H%M%S")+str(int(x.strftime("%f")/100)))
     #return int(x.strftime("%f"))
-    return int(datetime.now().strftime('%m%d%H%M%S'))
+    return int(datetime.now().strftime('%Y%m%d%H%M%S%f')[:19])
 
 
 def import_module_from_path(path) -> types.ModuleType:
@@ -75,7 +75,7 @@ def getArgs(argv=sys.argv):
 
 
     upload_parent_p = configargparse.ArgumentParser(default_config_files=default_config_file,add_help=False)
-    upload_parent_p.add('--upload-id', type=int, default=getDefaultUploadid(),action='store',help='uploadid in i2b2 tables, current-datetime as ymdHMS',env_var='UPLOAD_ID')
+    upload_parent_p.add('--upload-id', type=int, default=getDefaultUploadid(),action='store',help='uploadid in i2b2 tables, current-datetime as YmdHMSf',env_var='UPLOAD_ID')
     upload_parent_p.add('--source-system-cd', type=str, default="i2b2clinical",action='store',help='sourcesystem_cd used in i2b2 tables')
     upload_parent_p.add('--csv-delimiter', default=',',type=str,action='store',help="delimiter for csv files",env_var='CSV_DELIMITER')
     upload_parent_p.add('--bcp-delimiter', default='~@~',type=str,action='store',help="delimiter for bcp files",env_var='BCP_DELIMITER')

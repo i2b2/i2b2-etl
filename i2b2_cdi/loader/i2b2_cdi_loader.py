@@ -64,7 +64,7 @@ def load_facts(obs_file_path):
         file_path (:obj:`str`, mandatory):
 
     """
-    perform_fact.load_facts(obs_file_path)
+    factErrorFiles = perform_fact.load_facts(obs_file_path)
 
 
 def delete_encounters():

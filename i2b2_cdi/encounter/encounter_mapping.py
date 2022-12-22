@@ -25,6 +25,8 @@ from alive_progress import alive_bar, config_handler
 from pathlib import Path
 from i2b2_cdi.common import delete_file_if_exists, mkParentDir, file_len
 from i2b2_cdi.config.config import Config
+from i2b2_cdi.fact.TimeAnalysiswithDecorator import total_time
+import codecs
 
 config_handler.set_global(length=50, spinner='triangles2')
 
@@ -41,7 +43,7 @@ class EncounterMapping:
         self.bcp_header = ['ENCOUNTER_IDE', 'ENCOUNTER_IDE_SRC', 'PROJECT_ID', 'ENCOUNTER_NUM', 'PATIENT_IDE', 'PATIENT_IDE_SRC',
                            'ENCOUNTER_IDE_STATUS', 'UPLOAD_DATE', 'UPDATE_DATE', 'DOWNLOAD_DATE', 'IMPORT_DATE', 'SOURCESYSTEM_CD', 'UPLOAD_ID']
 
-    def create_encounter_mapping(self, csv_file_path, input_csv_delimiter, encounter_mapping_file_path, bcp_file_delimiter):
+    def create_encounter_mapping(self, csv_file_path, encounter_mapping_file_path,config):
         """This method creates encounter mapping, it checks if mapping already exists
 
         Args:
@@ -56,15 +58,15 @@ class EncounterMapping:
             max_line = file_len(csv_file_path)
 
             # Get max of encounter_num
-            self.encounter_num = self.get_max_encounter_num()
+            self.encounter_num = self.get_max_encounter_num(config)
 
             # Get existing encounter mapping
-            encounter_map = get_encounter_mapping()
+            encounter_map = get_encounter_mapping(config)
 
             # Read input csv file
-            with open(csv_file_path, mode='r', encoding='utf-8-sig') as csv_file:
+            with codecs.open(csv_file_path, mode='r', encoding='utf-8-sig',errors='ignore') as csv_file:
                 csv_reader = csv.DictReader(
-                    csv_file, delimiter=input_csv_delimiter)
+                    csv_file, delimiter=config.csv_delimiter)
                 csv_reader.fieldnames = [c.replace(
                     '-', '').replace('_', '').replace(' ', '').lower() for c in csv_reader.fieldnames]
                 if 'encounterid' in csv_reader.fieldnames and 'mrn' in csv_reader.fieldnames:
@@ -87,7 +89,8 @@ class EncounterMapping:
 
                             # Get next encounter_num if it does not exists
                             if encounter_num is None:
-                                encounter_num = self.get_next_encounter_num()
+
+                                encounter_num = self.encounter_num+1
                                 # Update the map cache
                                 encounter_map.update(
                                     {row['encounterid']: encounter_num})
@@ -95,7 +98,7 @@ class EncounterMapping:
                                     encounter_num, row['encounterid'], 'DEMO', row['mrn'])
             print('\n')
             self.write_encounter_mapping(
-                encounter_mapping_file_path, bcp_file_delimiter)
+                encounter_mapping_file_path, config.bcp_delimiter, config.source_system_cd, config.upload_id )
         except Exception as e:
             logger.error('Failed to genrate encounter mapping : {}', e)
             raise e
@@ -130,12 +133,12 @@ class EncounterMapping:
         except Exception as e:
             raise e
 
-    def get_max_encounter_num(self):
+    def get_max_encounter_num(self,config):
         """This method runs the query on encounter mapping to get max encounter_num.
         """
         encounter_num = None
         try:
-            with I2b2crcDataSource() as cursor:
+            with I2b2crcDataSource(config) as cursor:
                 query = 'select COALESCE(max(encounter_num), 0) as encounter_num from ENCOUNTER_MAPPING'
                 cursor.execute(query)
                 row = cursor.fetchone()
@@ -144,13 +147,8 @@ class EncounterMapping:
         except Exception as e:
             raise e
 
-    def get_next_encounter_num(self):
-        """This method  increments encounter num by 1.
-        """
-        self.encounter_num += 1
-        return self.encounter_num
 
-    def write_encounter_mapping(self, encounter_mapping_file_path, bcp_file_delimiter):
+    def write_encounter_mapping(self, encounter_mapping_file_path, bcp_file_delimiter, source_system_cd, upload_id):
         """This method writes encounter mappings in a csv file
 
         Args:
@@ -166,7 +164,7 @@ class EncounterMapping:
                     for mapping in self.new_encounter_map:
                         value = self.new_encounter_map.get(mapping)
                         _row = [mapping, value[1], 'DEMO', str(
-                            value[0]), value[2], 'DEMO', '', '', '', '', self.import_time, Config.config.source_system_cd, str(Config.config.upload_id)]
+                            value[0]), value[2], 'DEMO', '', '', '', '', self.import_time, source_system_cd, str(upload_id)]
                         batch.append(_row)
                         if(len(batch) == self.write_batch_size):
                             self.write_to_bcp_file(
@@ -197,7 +195,7 @@ class EncounterMapping:
             raise e
 
 
-def create_encounter_mapping(csv_file_path):
+def create_encounter_mapping(csv_file_path,config):
     """This methods contains housekeeping needs to be done before creating encounter mapping.
 
     Args:
@@ -207,8 +205,7 @@ def create_encounter_mapping(csv_file_path):
     """
     if os.path.exists(csv_file_path):
         D = EncounterMapping()
-        input_csv_delimiter = str(Config.config.csv_delimiter)
-        bcp_file_delimiter = str(Config.config.bcp_delimiter)
+        
         encounter_mapping_file_path = os.path.join(
             Path(csv_file_path).parent, "deid", "bcp", 'encounter_mapping.bcp')
 
@@ -217,19 +214,19 @@ def create_encounter_mapping(csv_file_path):
         mkParentDir(encounter_mapping_file_path)
 
         D.create_encounter_mapping(
-            csv_file_path, input_csv_delimiter, encounter_mapping_file_path, bcp_file_delimiter)
+            csv_file_path, encounter_mapping_file_path,config)
         return encounter_mapping_file_path
     else:
         logger.error('File does not exist : {}', csv_file_path)
 
-def get_encounter_mapping():
+def get_encounter_mapping(config):
     """Get encounter mapping data from i2b2 instance"""
     encounter_map = {}
     try:
         logger.debug("Getting existing encounter mappings from database")
         query = 'SELECT encounter_ide, encounter_num FROM encounter_mapping'
 
-        with I2b2crcDataSource() as cursor:
+        with I2b2crcDataSource(config) as cursor:
             cursor.execute(query)
             result = cursor.fetchall()
             if result:

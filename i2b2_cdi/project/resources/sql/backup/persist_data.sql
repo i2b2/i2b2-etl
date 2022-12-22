@@ -6,15 +6,15 @@
 --
 SELECT 
     CASE 
-		WHEN (CONCEPT_TYPE is not NULL) THEN CONCEPT_TYPE
+		WHEN (concept_type is not NULL) THEN CONCEPT_TYPE
 		ELSE ''
-    END AS [type],
-    UNIT_CD AS units,
-    CONCEPT_PATH AS [path],
-    NAME_CHAR AS name,
-    CONCEPT_CD AS [code],
-	DESCRIPTION AS description,
-    CONCEPT_BLOB AS blob,
-    DEFINITION_TYPE AS definition_type
-  FROM [i2b2demodata].[dbo].[CONCEPT_DIMENSION]
-  WHERE DEFINITION_TYPE='custom_definition'
+    END AS type,
+    unit_cd AS units,
+    concept_path AS path,
+    name_char AS name,
+    concept_cd AS code,
+	description AS description,
+    concept_blob AS blob,
+    definition_type AS definition_type
+  FROM concept_dimension
+  WHERE definition_type='custom_definition'

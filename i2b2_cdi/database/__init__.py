@@ -5,5 +5,5 @@
 # the terms of the Healthcare Disclaimer.
 #
 
-from .cdi_db_executor import execSql,getPdf,getDataFrameInChunks
+from .cdi_db_executor import execSql,getPdf,getDataFrameInChunks,getDataFrameInChunksUsingCursor,getPdfUsingCursor
 from .database_helper import DataSource

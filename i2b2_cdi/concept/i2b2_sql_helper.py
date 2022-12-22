@@ -9,15 +9,15 @@ from loguru import logger
 from i2b2_cdi.common import str_from_file
 from pathlib import Path
 import re,csv
-from i2b2_cdi.config.config import Config 
 import datetime
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 #from .transform_file import *
 from i2b2_cdi.database.cdi_database_connections import  I2b2metaDataSource
+import os
 METADATACOLUMNS='C_HLEVEL, C_FULLNAME, C_NAME, C_SYNONYM_CD, C_VISUALATTRIBUTES, C_TOTALNUM, C_BASECODE, C_METADATAXML, C_FACTTABLECOLUMN, C_TABLENAME, C_COLUMNNAME, C_COLUMNDATATYPE, C_OPERATOR, C_DIMCODE, C_COMMENT,C_TOOLTIP,M_APPLIED_PATH,UPDATE_DATE,CONCEPT_TYPE,CONCEPT_BLOB,DEFINITION_TYPE,UNIT_CD,UPLOAD_ID,SOURCESYSTEM_CD'.split(',')
 TABLEACCESSCOLUMNS=["C_TABLE_CD", "C_TABLE_NAME", "C_PROTECTED_ACCESS", "C_ONTOLOGY_PROTECTION","C_HLEVEL", "C_FULLNAME", "C_NAME", "C_SYNONYM_CD", "C_VISUALATTRIBUTES","C_TOTALNUM", "C_BASECODE", "C_METADATAXML", "C_FACTTABLECOLUMN", "C_DIMTABLENAME","C_COLUMNNAME", "C_COLUMNDATATYPE", "C_OPERATOR", "C_DIMCODE", "C_COMMENT", "C_TOOLTIP","C_ENTRY_DATE", "C_CHANGE_DATE", "C_STATUS_CD", "VALUETYPE_CD","UPLOAD_ID"] 
    
-def getOntologySql(sqlDf,existing_sdf,input_dir):
+def getOntologySql(sqlDf,existing_sdf,input_dir,config):
     '''
     sql for metadata and concept dim from Df
     ''' 
@@ -29,9 +29,9 @@ def getOntologySql(sqlDf,existing_sdf,input_dir):
         logger.warning(msg)
         return ['','','']
     
-    return getMetaDataSql(sqlDf,existing_sdf,i2b2_metadata_table_name="i2b2",inputDir=input_dir),\
-        getConceptDimSql(),\
-            getTableAccessSql(sqlDf,existing_sdf,inputDir=input_dir)
+    return getMetaDataSql(config,sqlDf,existing_sdf,i2b2_metadata_table_name="i2b2",inputDir=input_dir),\
+        getConceptDimSql(config),\
+            getTableAccessSql(sqlDf,existing_sdf,config,inputDir=input_dir)
 
 
 def getConceptType_and_Metadataxml(xml_defs,r):
@@ -79,10 +79,9 @@ def getConceptType_and_Metadataxml(xml_defs,r):
 
 
 
-def getMetaDataArr(sqlDf,existing_sdf):
+def getMetaDataArr(sqlDf,existing_sdf,config):
     if sqlDf is None:
         return pd.DataFrame(columns=METADATACOLUMNS)
-    config=Config.config
     metadata_xml_def_fp=str(Path(__file__).parent)+'/resources/csv/metadataxml_types_and_samples.csv'
     xml_defs=pd.read_csv(metadata_xml_def_fp,header=0)
     xml_defs['Type']=xml_defs['Type'].apply(lambda x: str(x).lower())
@@ -160,9 +159,9 @@ def getMetaDataArr(sqlDf,existing_sdf):
         
         if(config.crc_db_type=='mssql'):
             try:
-                with I2b2metaDataSource() as cursor:
+                with I2b2metaDataSource(config) as cursor:
                     query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'I2B2' AND TABLE_CATALOG =?"
-                    cursor.execute(query, (Config.config.ont_db_name,))
+                    cursor.execute(query, (config.ont_db_name,))
                     column_list_set = cursor.fetchall()
                     for column in column_list_set:
                         column_list.append(column[0])
@@ -170,9 +169,9 @@ def getMetaDataArr(sqlDf,existing_sdf):
                 logger.error(e)
         elif(config.crc_db_type=='pg'):
             try:
-                conn1 = I2b2crcDataSource()
+                conn1 = I2b2crcDataSource(config)
                 with conn1 as conn:
-                    colNames=pd.read_sql("SELECT column_name FROM information_schema.columns WHERE table_name = 'i2b2' AND table_schema = '"+Config.config.ont_db_name+"'",conn.connection)
+                    colNames=pd.read_sql("SELECT column_name FROM information_schema.columns WHERE table_name = 'i2b2' AND table_schema = '"+config.ont_db_name+"'",conn.connection)
                     vals = colNames.values
                     for sublist in vals:
                         column_list.extend(sublist)
@@ -187,7 +186,7 @@ def getMetaDataArr(sqlDf,existing_sdf):
         
     return metaDataDF
 
-def getTableAccessArr(sqlDf,existing_sdf):
+def getTableAccessArr(sqlDf,existing_sdf,config):
     logger.trace('..processing table access')
     if sqlDf is None:
         return pd.DataFrame(columns=TABLEACCESSCOLUMNS)
@@ -213,7 +212,7 @@ def getTableAccessArr(sqlDf,existing_sdf):
             ,sqlQuote(r['concept_name'])\
             ,'N', 'FA', '', '', '', 'concept_cd', 'concept_dimension', 'path', 'T', 'LIKE'\
             ,sqlQuote(r['code_path'].replace('/','\\')+'\\')\
-            ,'',sqlQuote(r['concept_name']),'','','','',str(Config.config.upload_id)]
+            ,'',sqlQuote(r['concept_name']),'','','','',str(config.upload_id)]
 
             #This validation is required if there is only one node for a concept then it was showing as folder but with this it will show as leaf node for example if the path is /test then this will show as leaf node only
             if r['is_leaf']== True:
@@ -224,7 +223,7 @@ def getTableAccessArr(sqlDf,existing_sdf):
                 ,sqlQuote(r['concept_name'])\
                 ,'N', 'LA', '', '', '', 'concept_cd', 'concept_dimension', 'path', 'T', 'LIKE'\
                 ,sqlQuote(r['code_path'].replace('/','\\')+'\\')\
-                ,'',sqlQuote(r['concept_name']),'','','','',str(Config.config.upload_id)]
+                ,'',sqlQuote(r['concept_name']),'','','','',str(config.upload_id)]
 
             arrList.append(a1)
            
@@ -238,8 +237,7 @@ def getTableAccessArr(sqlDf,existing_sdf):
     
 
 
-def getMetaDataSql(sqlDf,existing_sdf,i2b2_metadata_table_name="i2b2",inputDir=None):
-    config=Config.config
+def getMetaDataSql(config,sqlDf,existing_sdf,i2b2_metadata_table_name="i2b2",inputDir=None):
     metadataxml_st='''<?xml version="1.0"?><ValueMetadata><Version>3.02</Version><CreationDateTime>04/15/2007 01:22:23</CreationDateTime><TestID>Common</TestID><TestName>Common</TestName><DataType>PosFloat</DataType><CodeType>GRP</CodeType><Loinc>2090-9</Loinc><Flagstouse></Flagstouse><Oktousevalues>Y</Oktousevalues><MaxStringLength></MaxStringLength><LowofLowValue></LowofLowValue><HighofLowValue></HighofLowValue><LowofHighValue></LowofHighValue><HighofHighValue></HighofHighValue><LowofToxicValue></LowofToxicValue><HighofToxicValue></HighofToxicValue><EnumValues></EnumValues><CommentsDeterminingExclusion><Com></Com></CommentsDeterminingExclusion><UnitValues><NormalUnits></NormalUnits><EqualUnits></EqualUnits><ExcludingUnits></ExcludingUnits><ConvertingUnits><Units></Units><MultiplyingFactor></MultiplyingFactor></ConvertingUnits></UnitValues><Analysis><Enums /><Counts /><New /></Analysis></ValueMetadata>'''
     '''insert_st="INSERT INTO dbo.i2b2([C_HLEVEL], [C_FULLNAME], [C_NAME], [C_SYNONYM_CD], [C_VISUALATTRIBUTES], [C_TOTALNUM], [C_BASECODE], [C_METADATAXML], [C_FACTTABLECOLUMN], [C_TABLENAME], [C_COLUMNNAME], [C_COLUMNDATATYPE], [C_OPERATOR], [C_DIMCODE], [C_COMMENT], [C_TOOLTIP], [M_APPLIED_PATH], [UPDATE_DATE], [DOWNLOAD_DATE], [IMPORT_DATE], [SOURCESYSTEM_CD], [VALUETYPE_CD], [M_EXCLUSION_CD], [C_PATH], [C_SYMBOL])
     VALUES(4, '\i2b2\Demographics\Zip codes\Arkansas\Parkdale\', 'Parkdale', 'N', 'FA ', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'path', 'T', 'LIKE', '\i2b2\Demographics\Zip codes\Arkansas\Parkdale\', NULL, 'Demographics \ Zip codes \ Arkansas \ Parkdale', '@', '20070410 00:00:00.0', '20070410 00:00:00.0', '20070410 00:00:00.0', 'DEM2FACT CONVERT', NULL, NULL, NULL, NULL)
@@ -259,7 +257,7 @@ def getMetaDataSql(sqlDf,existing_sdf,i2b2_metadata_table_name="i2b2",inputDir=N
     logger.trace('columns:{}',sqlDf[['concept_name','concept_type']])
     #both the paths are required for checking.The existing_paths for checking the parent path ontology and the existing_code_paths is for checking the full path 
     
-    metaDataDF=getMetaDataArr(sqlDf,existing_sdf)#[col]
+    metaDataDF=getMetaDataArr(sqlDf,existing_sdf,config)#[col]
     
     logger.trace('metaDataDF:{}',list(metaDataDF))
 
@@ -276,24 +274,27 @@ def getMetaDataSql(sqlDf,existing_sdf,i2b2_metadata_table_name="i2b2",inputDir=N
         
     sql=insert_st+' VALUES\n'+','.join(val_str_arr)
     sql=sql.replace('\'NULL\'', 'NULL')
+    if config.sql_upload or config.crc_db_type=='pg':
+        sql=sql.replace("''{","'{")
+        sql=sql.replace("}''","}'")
     #logger.info('me')
     
     return sql
 
 
-def getConceptDimSql():
+def getConceptDimSql(config):
     currentFilePath = Path(__file__).parent
     conceptDimQuery = str_from_file(str(currentFilePath)+'/resources/sql/concept_dimension.sql')
-    if(Config.config.crc_db_type=='pg'):   
-        conceptDimQuery = conceptDimQuery.replace('{METADATA_DB_NAME}', Config.config.ont_db_name)    
-    elif(str(Config.config.crc_db_type)=='mssql'):
-        conceptDimQuery = conceptDimQuery.replace('{METADATA_DB_NAME}', Config.config.ont_db_name+".dbo")
-    conceptDimQuery = conceptDimQuery.replace('{UPLOAD_ID}', str(Config.config.upload_id))
+    if(config.crc_db_type=='pg'):   
+        conceptDimQuery = conceptDimQuery.replace('{METADATA_DB_NAME}', config.ont_db_name)    
+    elif(str(config.crc_db_type)=='mssql'):
+        conceptDimQuery = conceptDimQuery.replace('{METADATA_DB_NAME}', config.ont_db_name+".dbo")
+    conceptDimQuery = conceptDimQuery.replace('{UPLOAD_ID}', str(config.upload_id))
     return conceptDimQuery
 
 
 
-def getTableAccessSql(sqlDf,existing_sdf,inputDir=None):
+def getTableAccessSql(sqlDf,existing_sdf,config,inputDir=None):
     
     col=TABLEACCESSCOLUMNS
 
@@ -306,7 +307,7 @@ def getTableAccessSql(sqlDf,existing_sdf,inputDir=None):
         return '--no root element detected'
     insert_st="INSERT INTO TABLE_ACCESS(C_TABLE_CD, C_TABLE_NAME, C_PROTECTED_ACCESS, C_ONTOLOGY_PROTECTION, C_HLEVEL, C_FULLNAME, C_NAME, C_SYNONYM_CD, C_VISUALATTRIBUTES, C_TOTALNUM, C_BASECODE, C_METADATAXML, C_FACTTABLECOLUMN, C_DIMTABLENAME, C_COLUMNNAME, C_COLUMNDATATYPE, C_OPERATOR, C_DIMCODE, C_COMMENT, C_TOOLTIP,C_ENTRY_DATE, C_CHANGE_DATE, C_STATUS_CD, VALUETYPE_CD,UPLOAD_ID)"
     
-    DataDF=getTableAccessArr(sqlDf,existing_sdf)#[col]
+    DataDF=getTableAccessArr(sqlDf,existing_sdf,config)#[col]
     logger.trace('DataDF:{}',list(DataDF))
 
     #replacing empty elements with NULL
@@ -344,7 +345,7 @@ def sqlQuote(unquoted):
     return '\''+str(unquoted).replace('\'','\'\'')+'\''
 
 def createUploadIdField_in_table(dbName):
-    if(Config.config.crc_db_type=='mssql'):
+    if(os.environ['CRC_DB_TYPE']=='mssql'):
         return '''
         IF NOT EXISTS (
             SELECT  * FROM
@@ -357,7 +358,7 @@ def createUploadIdField_in_table(dbName):
             END;
             GO
         '''
-    elif(Config.config.crc_db_type=='pg'):
+    elif(os.environ['CRC_DB_TYPE']=='pg'):
         return '''
         ALTER TABLE '''+dbName+'''
          ADD COLUMN IF NOT EXISTS UPLOAD_ID INT;
@@ -365,7 +366,7 @@ def createUploadIdField_in_table(dbName):
 
 def createConceptTypeField_in_table(dbName):
     
-    if(Config.config.crc_db_type=='mssql'):
+    if(os.environ['CRC_DB_TYPE']=='mssql'):
         return '''
         IF NOT EXISTS (
         SELECT  * FROM
@@ -378,7 +379,7 @@ def createConceptTypeField_in_table(dbName):
         END;
         GO
     '''
-    elif(Config.config.crc_db_type=='pg'):
+    elif(os.environ['CRC_DB_TYPE']=='pg'):
         return '''
         ALTER TABLE '''+dbName+'''
         ADD COLUMN IF NOT EXISTS CONCEPT_TYPE VARCHAR(50) NULL;

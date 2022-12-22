@@ -31,7 +31,7 @@ def getConcepts(args,type):
 
     """
     try:
-        conn1 = I2b2crcDataSource()
+        conn1 = I2b2crcDataSource(args)
         if args.project_name != 'demo':
             conn1.database = args.project_name
         with conn1 as conn:

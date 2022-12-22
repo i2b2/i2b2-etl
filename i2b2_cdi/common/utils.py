@@ -26,6 +26,8 @@ from pathlib import Path
 from loguru import logger
 import ntpath
 from datetime import datetime as DateTime
+import csv
+from time import time
 
 date_format = ('%Y-%m-%d', '%Y-%m-%d %H:%M:%S','%Y-%m-%d %H:%M:%S.%f', '%d/%m/%y', '%d/%m/%y %H:%M', '%d/%m/%y %H:%M:%S','%d/%m/%y %H:%M:%S.%f')
 def parse_date(date_str):
@@ -221,5 +223,118 @@ def line_count(path):
         return lines - 1
     except Exception as e:
         logger.error("line count issue: {}".format(e))
+
+def parse_date(date_str):
+        """This method checks for date format
+
+        Args:
+            _date (:obj:`str`, mandatory): Date to be parsed
+
+        Returns:
+            boolean: True if date format is correct else false.
+        """
+        for fmt in date_format:
+            try:
+                return DateTime.strptime(date_str, fmt)
+            except ValueError:
+                pass
+        return None
+
+def write_deid_file_header(deid_header, deid_file_path, output_deid_delimiter):
+    """This method writes the header of deid file using csv writer
+
+    Args:
+        deid_file_path (:obj:`str`, mandatory): Path to the deid file.
+
+    """
+    try:
+        with open(deid_file_path, 'a+') as csvfile:
+            writer = csv.DictWriter(
+                csvfile, fieldnames=deid_header, delimiter=output_deid_delimiter, lineterminator='\n')
+            writer.writeheader()
+    except Exception as e:
+        raise e
+
+def write_to_deid_file(deid_header,_valid_rows_arr, deid_file_path, output_deid_delimiter):
+    """This method writes the list of rows to the deid file using csv writer
+
+    Args:
+        _valid_rows_arr (:obj:`str`, mandatory): List of valid facts to be written into deid file.
+        deid_file_path (:obj:`str`, mandatory): Path to the output deid file.
+        output_deid_delimiter (:obj:`str`, mandatory): Delimeter to be used in deid file.
+
+    """
+    try:
+        with open(deid_file_path, 'a+') as csvfile:
+            writer = csv.DictWriter(
+                csvfile, fieldnames=deid_header, delimiter=output_deid_delimiter, lineterminator='\n', extrasaction='ignore')
+            writer.writerows(_valid_rows_arr)
+    except Exception as e:
+        raise e
+
+def write_error_file_header(error_file_header,deid_file_path):
+    """This method writes the header of error file using csv writer
+
+    Args:
+        deid_file_path (:obj:`str`, mandatory): Path to the error file.
+
+    """
+    try:
+        with open(deid_file_path, 'a+') as csvfile:
+            writer = csv.DictWriter(
+                csvfile, fieldnames=error_file_header, delimiter=',', quoting=csv.QUOTE_ALL)
+            writer.writeheader()
+    except Exception as e:
+        raise e
+
+def write_to_error_file(error_file_header,error_file_path, _error_rows_arr):
+    """This method writes the list of rows to the error file using csv writer
+
+    Args:
+        error_file_path (:obj:`str`, mandatory): Path to the error file.
+        _error_rows_arr (:obj:`str`, mandatory): List of invalid facts to be written into error file.
+
+    """
+    try:
+        with open(error_file_path, 'a+') as csvfile:
+            writer = csv.DictWriter(
+                csvfile, fieldnames=error_file_header, delimiter=',', quoting=csv.QUOTE_ALL, extrasaction='ignore')
+            writer.writerows(_error_rows_arr)
+    except Exception as e:
+        raise e
+
+def write_to_bcp_file(_valid_rows_arr, bcp_file_path, bcp_delimiter,count):
+        """This method writes the list of rows to the bcp file using csv writer
+
+        Args:
+            _valid_rows_arr (:obj:`str`, mandatory): List of valid facts to be written into bcp file.
+            bcp_file_path (:obj:`str`, mandatory): Path to the output bcp file.
+            bcp_delimiter (:obj:`str`, mandatory): Delimeter to be used in bcp file.
+
+        """
+        try:
+            bcp_file_name,bcp_file_ext = os.path.splitext(bcp_file_path)
+            bcp_file_path = bcp_file_name+str(count)+bcp_file_ext
+            with open(bcp_file_path, 'a+') as csvfile:
+                for _arr in _valid_rows_arr:
+                    csvfile.write(bcp_delimiter.join(_arr) + "\n")
+        except Exception as e:
+            raise e
+
+functionName=[]
+timeTaken=[]
+def total_time(func):
+    def wrap_func(*args, **kwargs):
+        t1 = time()
+        result = func(*args, **kwargs)
+        t2 = time()
+        filename = "/usr/src/app/tmp/timeAnalysis.csv"
+        functionName.append(func.__name__)
+        timeTaken.append(t2-t1)
+        with open(filename,'a') as file:
+            file.write(f'{func.__name__!r},{(t2-t1):.4f}')
+            file.write("\n")
+        return result
+    return wrap_func
 
         

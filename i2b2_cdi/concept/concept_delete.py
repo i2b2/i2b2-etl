@@ -20,58 +20,61 @@ import os
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource, I2b2metaDataSource
 from i2b2_cdi.exception.cdi_database_error import CdiDatabaseError
 from loguru import logger
-from i2b2_cdi.config.config import Config
 from flask import request
+from pathlib import Path
 
-def delete_concepts_i2b2_metadata():
+def delete_concepts_i2b2_metadata(config):
     """Delete the metadata for the concepts from i2b2 instance"""
     try:
         logger.debug('Deleting data from i2b2 metadata and table_access')
         queries = ['truncate table i2b2', 'truncate table table_access']
 
-        with I2b2metaDataSource() as cursor:
+        with I2b2metaDataSource(config) as cursor:
             delete(cursor, queries)
     except Exception as e:
         raise CdiDatabaseError("Couldn't delete data: {0}".format(str(e)))
 
 
-def delete_concepts_i2b2_demodata():
+def delete_concepts_i2b2_demodata(config):
     """Delete the concepts from i2b2 instance"""
     try:
         logger.debug(
-            'Deleting data from i2b2 concept dimension, derived_concept_definition, derived_concept_dependency and derived_concept_job_details')
+            'Deleting data from i2b2 concept_dimension and derived_concept_job')
         queries = [
             "delete from concept_dimension"]
 
-        if(Config.config.crc_db_type=='mssql'):
-            queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_definition') BEGIN delete from derived_concept_definition END")
-            queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_dependency') BEGIN delete from derived_concept_dependency END")
-            queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_job_details') BEGIN delete from derived_concept_job_details END")
-        elif(Config.config.crc_db_type=='pg'):
-            queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_definition' and schemaname= '" +Config.config.crc_db_name+ "') then delete from derived_concept_definition; end if; end $$ ")
-            queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_dependency' and schemaname= '" +Config.config.crc_db_name+ "') then delete from derived_concept_dependency; end if; end $$ ")            
-            queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_job_details' and schemaname= '" +Config.config.crc_db_name+ "') then delete from derived_concept_job_details; end if; end $$ ")
-        with I2b2crcDataSource() as cursor:
+        if(config.crc_db_type=='mssql'):
+            # queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_definition') BEGIN delete from derived_concept_definition END")
+            # queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_dependency') BEGIN delete from derived_concept_dependency END")
+            # queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_job_details') BEGIN delete from derived_concept_job_details END")
+            queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_job') BEGIN delete from derived_concept_job END")
+        elif(config.crc_db_type=='pg'):
+            # queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_definition' and schemaname= '" +config.crc_db_name+ "') then delete from derived_concept_definition; end if; end $$ ")
+            # queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_dependency' and schemaname= '" +config.crc_db_name+ "') then delete from derived_concept_dependency; end if; end $$ ")            
+            # queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_job_details' and schemaname= '" +config.crc_db_name+ "') then delete from derived_concept_job_details; end if; end $$ ")
+            queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_job' and schemaname= '" +config.crc_db_name+ "') then delete from derived_concept_job; end if; end $$ ")
+        with I2b2crcDataSource(config) as cursor:
             delete(cursor, queries)
     except Exception as e:
         raise CdiDatabaseError("Couldn't delete data: {0}".format(str(e)))
 
-def concepts_delete_by_id():
-    sqlOnt=["delete from i2b2 where upload_id ="+str(Config.config.upload_id),
-    "delete from table_access where upload_id ="+str(Config.config.upload_id)]
-    sqlCrc=["delete from concept_dimension where upload_id ="+str(Config.config.upload_id)]
-
+def concepts_delete_by_id(config):
+    sqlOnt=["delete from i2b2 where upload_id ="+str(config.upload_id),
+    "delete from table_access where upload_id ="+str(config.upload_id)]
+    sqlCrc=["delete from concept_dimension where upload_id ="+str(config.upload_id)]
     # login_project = str(request.args.get('loginProject'))
-    # logfile = os.path.join("tmp/api_reserved_dir/",login_project,"etl-runtime.log")
+    Path("tmp/app_dir").mkdir(parents=True, exist_ok=True)
     logfile = os.path.join("tmp/app_dir/etl-runtime.log")
-    with I2b2crcDataSource() as cursor:
+    
+    
+    with I2b2crcDataSource(config) as cursor:
         for query in sqlCrc:
             cursor.execute(query)
         with open(logfile, "a") as log_file:
             log_file.write(str(cursor.rowcount)+" Concepts Deleted\n\n")
             log_file.close()
 
-    with I2b2metaDataSource() as cursor:
+    with I2b2metaDataSource(config) as cursor:
         for query in sqlOnt:
             cursor.execute(query)
 

@@ -19,13 +19,13 @@ from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 from i2b2_cdi.log import logger
 import pandas as pd
 from i2b2_cdi.common.constants import *
-from i2b2_cdi.config.config import Config
+import os
 from i2b2_cdi.database import getPdf
 
 env_path = Path('i2b2_cdi/resources') / '.env'
 
 
-def fact_extract():
+def fact_extract(config):
     """Extract the facts from observation_fact instance as _fact.csv file"""
     logger.info("Extracting facts")
 
@@ -40,14 +40,12 @@ def fact_extract():
     logger.info('running {}',sql_concept_dim)
 
     try:
-        oDf=getPdf(I2b2crcDataSource(),sql_obser_fact)
-        cDf=getPdf(I2b2crcDataSource(),sql_concept_dim)
+        oDf=getPdf(I2b2crcDataSource(config),sql_obser_fact)
+        cDf=getPdf(I2b2crcDataSource(config),sql_concept_dim)
         # using condition to make it allign columns names with same cases
-        if(Config.config.crc_db_type=='pg'):
+        if(config.crc_db_type=='pg'):
             column_list=[x.upper() for x in list(oDf.columns)]
             oDf.columns=column_list
-        elif(Config.config.crc_db_type=='mssql'):
-            oDf=oDf
         oDf.to_csv('output/raw_facts.csv',index=False,encoding='utf-8')
         ctypeLk={}
         arr=[]
@@ -62,14 +60,14 @@ def fact_extract():
             
             for id, r in oDf.iterrows():
                 code=r["CONCEPT_CD"]
-                value=r["TVAL_CHAR"]
+                value=r["NVAL_NUM"] # if type is in float, integer, posfloat & posinteger
                 _type=ctypeLk[code]
-                #if _type=="float" or _type=="integer":
-                if _type=="Float" or _type=="Integer" or _type=="PosFloat" or _type=="PosInteger" :
-                    value=r["NVAL_NUM"]
-                
+                if _type.lower()=="largestring":
+                    value=r["OBSERVATION_BLOB"]
+                if(_type.lower()=="assertion" or _type.lower()=="string"):
+                    value=r["TVAL_CHAR"]
                 arr.append([r["PATIENT_NUM"],r["START_DATE"],code,value])
-                
+
         except Exception as e:
             logger.error(e)
         df=pd.DataFrame(arr,columns=['mrn','start-date','code','value'])

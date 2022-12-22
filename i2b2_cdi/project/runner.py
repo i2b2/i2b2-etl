@@ -11,6 +11,7 @@ from .addProject import addI2b2ProjectWrapper, copyDemoData, change_password
 from .loadSQL import load_data_from_SQL
 from .projectUpgrade import upgradeProject
 from .persistData import exportData
+from .initDatabase import initDatabase
 
 def mod_run(options):
     if options.command=='project':
@@ -32,6 +33,9 @@ def mod_run(options):
         elif options.sub_command=='upgrade':
             logger.debug('..running upgrade script')
             upgradeProject(options)
+        elif options.sub_command=='project_init':
+            logger.debug('..running project initialization')
+            initDatabase(options)
 
 if __name__ == "__main__":
     Config().new_config(argv=sys.argv[1:])

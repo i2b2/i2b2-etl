@@ -32,7 +32,7 @@ BEGIN
         [DOWNLOAD_DATE] [datetime] NULL,
         [IMPORT_DATE] [datetime] NULL,
         [SOURCESYSTEM_CD] [varchar](50) NULL,
-        [UPLOAD_ID] [int] NULL,
+        [UPLOAD_ID] [bigint] NULL,
         [ACTIVITY_TYPE_CD] [varchar](255) NULL,
         [ACTIVITY_STATUS_CD] [varchar](255) NULL,
         [PROGRAM_CD] [varchar](255) NULL

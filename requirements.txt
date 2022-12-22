@@ -17,3 +17,7 @@ openpyxl>=3.0.9
 requests>=2.26.0
 scikit-learn>=1.0.1
 matplotlib>=3.5.1
+plotly>=5.6.0
+tabulate>=0.8.9
+flask-restx>=0.5.1
+werkzeug==2.1.2

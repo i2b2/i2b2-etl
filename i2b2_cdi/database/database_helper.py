@@ -19,7 +19,6 @@
 
 import pyodbc
 import psycopg2
-from i2b2_cdi.config.config import Config
 
 class DataSource:
     """Provided the database connection and cursor"""
@@ -30,7 +29,7 @@ class DataSource:
             database='',
             username='',
             password='',
-            dbType='mssql'):
+            dbType=''):
         self.ip = ip #: Database server url
         self.port= port
         self.database = database #: Database name
@@ -49,14 +48,14 @@ class DataSource:
         """
         #connection string changed according to PGSQL
         try:
-            if(str(Config.config.crc_db_type)=='pg'):   
+            if(str(self.dbType)=='pg'):   
                 self.connection = psycopg2.connect(user=self.username,
                                     password=self.password,
                                     host=self.ip,
                                     port=self.port,
-                                    database=Config.config.pg_db_name,
+                                    database='i2b2',
                                     options="-c search_path="+self.database)
-            elif(str(Config.config.crc_db_type)=='mssql'):
+            elif(str(self.dbType)=='mssql'):
                 self.connection = pyodbc.connect(
                                     'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' +
                                     self.ip +

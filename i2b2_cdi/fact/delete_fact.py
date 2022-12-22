@@ -22,7 +22,10 @@ from i2b2_cdi.log import logger
 from i2b2_cdi.config.config import Config
 from flask import request
 from os import path
-def delete_facts_i2b2_demodata():
+from pathlib import Path
+from i2b2_cdi.common.constants import *
+
+def delete_facts_i2b2_demodata(config):
     """Delete the observation facts data from i2b2 instance"""
 
     try:
@@ -30,41 +33,29 @@ def delete_facts_i2b2_demodata():
             "Deleting data from observation_fact")
         queries = ['truncate table observation_fact']
 
-        with I2b2crcDataSource() as cursor:
-            delete(cursor, queries)
+        with I2b2crcDataSource(config) as cursor:
+            for query in queries:
+                cursor.execute(query)
+            logger.success(SUCCESS)
     except Exception as e:
         raise CdiDatabaseError("Couldn't delete data: {0}".format(str(e)))
 
 # undo operation
-def facts_delete_by_id():
-    sqlCrc=["delete from encounter_mapping where upload_id ="+str(Config.config.upload_id),
-    "delete from patient_dimension where upload_id ="+str(Config.config.upload_id),
-    "delete from patient_mapping where upload_id ="+str(Config.config.upload_id),
-    "delete from observation_fact where upload_id ="+str(Config.config.upload_id),
-    "delete from visit_dimension where upload_id ="+str(Config.config.upload_id)]
+def facts_delete_by_id(config):
+    sqlCrc=["delete from encounter_mapping where upload_id ="+str(config.upload_id),
+    "delete from patient_dimension where upload_id ="+str(config.upload_id),
+    "delete from patient_mapping where upload_id ="+str(config.upload_id),
+    "delete from observation_fact where upload_id ="+str(config.upload_id),
+    "delete from visit_dimension where upload_id ="+str(config.upload_id)]
 
     # login_project = str(request.args.get('loginProject'))
-    # logfile = path.join("tmp/api_reserved_dir/",login_project,"etl-runtime.log")
+    Path("tmp/app_dir").mkdir(parents=True, exist_ok=True)
     logfile = path.join("tmp/app_dir/etl-runtime.log")
-    with I2b2crcDataSource() as cursor:
+    with I2b2crcDataSource(config) as cursor:
         for query in sqlCrc:
             cursor.execute(query)
             if(query.__contains__("observation_fact")):
                 with open(logfile, "a") as log_file:
                     log_file.write(str(cursor.rowcount)+" Facts Deleted\n\n")
                     log_file.close()
-
-
-def delete(cursor, queries):
-    """Execute the provided query using the database cursor
-
-    Args:
-        cursor (:obj:`pyodbc.Connection.cursor`, mandatory): Cursor obtained from the Connection object connected to the database
-        queries (:obj:`list of str`, mandatory): List of delete queries to be executed 
-
-    """
-    try:
-        for query in queries:
-            cursor.execute(query)
-    except Exception as e:
-        raise CdiDatabaseError("Couldn't delete data: {}".format(str(e)))
+        logger.success(SUCCESS)

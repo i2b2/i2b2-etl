@@ -26,8 +26,7 @@ def mod_run(options):
 if __name__=='__main__':
     
     try:
-        Config().new_config(argv=sys.argv[1:])
-        options=Config.config
+        options = Config().new_config(argv=sys.argv[1:])
         logger.info("options:",options)
         for m in get_config_modules(fileName='runner.py'):
             modName="i2b2_cdi."+m+".runner"

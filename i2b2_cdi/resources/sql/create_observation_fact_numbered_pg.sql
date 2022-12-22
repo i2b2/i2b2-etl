@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS OBSERVATION_FACT_NUMBERED  (
         DOWNLOAD_DATE    	timestamp NULL,
         IMPORT_DATE      	timestamp NULL,
         SOURCESYSTEM_CD  	varchar(50) NULL,
-        UPLOAD_ID        	int NULL,
+        UPLOAD_ID        	bigint NULL,
         TEXT_SEARCH_INDEX	int  NOT NULL
         ) 
 

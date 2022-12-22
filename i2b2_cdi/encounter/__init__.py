@@ -4,4 +4,5 @@
 # of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
 # the terms of the Healthcare Disclaimer.
 #
-from .perform_encounter import load_encounters, delete_encounters
+#from .perform_encounter import load_encounters, delete_encounters
+from .perform_encounter import load_encounters

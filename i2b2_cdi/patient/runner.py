@@ -6,7 +6,7 @@
 #
 import sys
 from loguru import logger
-from i2b2_cdi.patient import load_patient_dimension, delete_patient_dimensions, delete_patient_mappings
+from i2b2_cdi.patient import load_patient_dimension,delete_patient
 from i2b2_cdi.common.file_util import dirGlob
 from i2b2_cdi.config.config import Config
 
@@ -18,11 +18,11 @@ def mod_run(options):
             files=dirGlob(dirPath=options.input_dir,fileSuffixList=['patients.csv'])
             logger.debug("Patient file list:",files)
             if files:
-                load_patient_dimension(files)
+                load_patient_dimension(files,options)
         elif options.sub_command=='delete':
             logger.debug('..running patient delete')
-            delete_patient_dimensions()
-            delete_patient_mappings()
+            delete_patient.delete_patient_mapping_i2b2_demodata(options)
+            delete_patient.delete_patients_i2b2_demodata(options)
 
 
 if __name__ == "__main__":

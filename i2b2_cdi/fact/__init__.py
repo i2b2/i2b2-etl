@@ -4,4 +4,5 @@
 # of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
 # the terms of the Healthcare Disclaimer.
 #
-from .perform_fact import load_facts,delete_facts
+#from .perform_fact import load_facts,delete_facts
+from .perform_fact import load_facts

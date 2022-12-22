@@ -25,7 +25,7 @@ from i2b2_cdi.database import getPdf
 env_path = Path('i2b2_cdi/resources') / '.env'
 
 
-def concept_extract():
+def concept_extract(config):
     """Extract the concepts from i2b2 instance as _concepts.csv file"""
     logger.info("Extracting concepts")
 
@@ -37,7 +37,7 @@ def concept_extract():
     logger.info('running {}',sql)
 
     try:
-        df=getPdf(I2b2metaDataSource(),sql)
+        df=getPdf(I2b2metaDataSource(config),sql)
 
         df.to_csv('output/raw_concepts.csv',index=False,encoding='utf-8')
         #df=df.head()

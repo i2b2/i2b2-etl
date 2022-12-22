@@ -9,7 +9,7 @@ from .config_helper import getArgs
 from loguru import logger
 
 class Config():
-    config=None
+    # config=None
     count=0
     
     def new_config(self,argv=[]):
@@ -18,7 +18,7 @@ class Config():
         if len(argv)<2:
             argv=['-h']
      
-        self.__class__.config= getArgs(argv=argv)
+        config= getArgs(argv=argv)
         logger.debug('argv{}:',argv)
         '''if 'python' not in sys.argv[0]:
             logger.debug('creating new config from-',argv)
@@ -29,6 +29,6 @@ class Config():
         else:
             logger.debug('creating new config from:',argv)
             self.__class__.config= getArgs([],argv=argv)'''
-        return self.__class__.config
+        return config
    
 

@@ -113,7 +113,7 @@ WHERE  T.type_desc = 'USER_TABLE';
         dataSourceSource.execSql(sql,autocommit=False)
             
 
-def addI2b2Project(pmDataSource,hiveDataSource,projectName='proj1',pmDbName='i2b2pm',hiveDbName='i2b2hive',projectUserPassword="proj1pass"):
+def addI2b2Project(config,pmDataSource,hiveDataSource,projectName='proj1',pmDbName='i2b2pm',hiveDbName='i2b2hive',projectUserPassword="proj1pass"):
     if ' ' in projectName: 
         raise Exception('projectName should not container spaces {}:',projectName)
     
@@ -126,11 +126,11 @@ def addI2b2Project(pmDataSource,hiveDataSource,projectName='proj1',pmDbName='i2b
     sql=sql.replace('test_user_id',projectName)
     sql=sql.replace('Test_User_Name','User for '+projectName)
     sql=sql.replace('user_password',modifyDigest(encoded_password.hexdigest()))
-    if(Config.config.crc_db_type=='mssql'):
+    if(config.crc_db_type=='mssql'):
         sql=sql.replace('"i2b2pm".dbo',pmDbName+'.dbo')
         sql=sql.replace('"i2b2hive".dbo',hiveDbName+'.dbo')
         pmSql,hiveSql=sql.split('RUN ON HIVE CELL')
-    elif(Config.config.crc_db_type=='pg'):
+    elif(config.crc_db_type=='pg'):
         sql=sql.replace('SQLSERVER','POSTGRESQL')
         sql=sql.replace('.dbo','')
         sql=sql.replace('"i2b2hive".dbo.','')
@@ -140,9 +140,8 @@ def addI2b2Project(pmDataSource,hiveDataSource,projectName='proj1',pmDbName='i2b
     logger.debug('creating project:{}',projectName)
     execSql(pmDataSource,pmSql)
     execSql(hiveDataSource,hiveSql)
-
-    delete_data(projectName)
-    #load_data(projectName)
+    delete_data(projectName,config)
+    #load_data(projectName,config)
 
     print('Successfully created database:',projectName)
     print('With username:',projectName)
@@ -159,12 +158,12 @@ def copyDemoData(args):
             dbType=args.crc_db_type)
         logger.debug("copying demodata")
         sql_resource_dir=dirname(realpath(__file__)) + sep + pardir + sep + pardir +sep+'i2b2_cdi/project/resources/'
-        if(Config.config.crc_db_type=='mssql'):
+        if(args.crc_db_type=='mssql'):
             sql=str_from_file(sql_resource_dir+'sql/copydemodata/copy_demodata_sqlserver.sql')
             sql=sql.replace('TARGET_DB',args.project_name)
             sql=sql.replace('i2b2demodata',args.crc_db_name)
             projsql=sql.replace('i2b2metadata',args.ont_db_name)
-        elif(Config.config.crc_db_type=='pg'):
+        elif(args.crc_db_type=='pg'):
             sql=str_from_file(sql_resource_dir+'sql/copydemodata/copy_demodata_postgres.sql')
             sql=sql.replace('user_schema',args.project_name)
             sql=sql.replace('i2b2demodata.dbo',args.crc_db_name)
@@ -180,13 +179,13 @@ def copyDemoData(args):
 def addI2b2ProjectWrapper(args):
     
     targetDb=args.project_name
-    crc_ds=I2b2crcDataSource()
+    crc_ds=I2b2crcDataSource(args)
 
-    ont_ds=I2b2metaDataSource()
+    ont_ds=I2b2metaDataSource(args)
 
-    pm_ds=I2b2pmDataSource()
+    pm_ds=I2b2pmDataSource(args)
 
-    hive_ds=I2b2hiveDataSource()
+    hive_ds=I2b2hiveDataSource(args)
 
     userPassword=args.project_user_password
 
@@ -202,9 +201,9 @@ def addI2b2ProjectWrapper(args):
             """)
 
         if(not(args.create_without_db)):
-            if(Config.config.crc_db_type=='pg'):
+            if(args.crc_db_type=='pg'):
                 execSql(crc_ds,'create schema '+targetDb+';',autocommit=True )
-            elif(Config.config.crc_db_type=='mssql'):
+            elif(args.crc_db_type=='mssql'):
                 execSql(crc_ds,'create database '+targetDb+';',autocommit=True )
 
         proj_ds=DataSource( ip=args.crc_db_host,
@@ -222,7 +221,7 @@ def addI2b2ProjectWrapper(args):
         I2b2DbGenerator(proj_ds,targetDb)
         #copyTables(crc_ds,proj_ds,crc_ds.db,targetDb)
         #copyTables(ont_ds,proj_ds,ont_ds.db,targetDb)
-        addI2b2Project(pm_ds,hive_ds,projectName=targetDb,pmDbName=pm_ds.database,hiveDbName=hive_ds.database,projectUserPassword=userPassword)
+        addI2b2Project(args,pm_ds,hive_ds,projectName=targetDb,pmDbName=pm_ds.database,hiveDbName=hive_ds.database,projectUserPassword=userPassword)
         
         copyDemoData(args)
         upgradeProject(args)
@@ -234,8 +233,8 @@ def addI2b2ProjectWrapper(args):
 def change_password(args):
     print(args)
     try:
-        proj_ds=I2b2pmDataSource()
-        proj_ds.check_database_connection()
+        proj_ds=I2b2pmDataSource(args)
+        proj_ds.check_database_connection(args)
         
         logger.debug("Updating password")
         encoded_password=hashlib.md5(args.password.encode())
@@ -259,26 +258,26 @@ def change_password(args):
         exit(1)
         raise(e)
 
-def delete_data(dbName):
+def delete_data(dbName,config):
         try:
-            config=Config().new_config(argv=['concept','delete','--ont-db-name', dbName,'--crc-db-name', dbName,'--ont-db-host',Config.config.ont_db_host,'--crc-db-host',Config.config.crc_db_host,'--crc-db-pass',Config.config.crc_db_pass,'--ont-db-pass',Config.config.ont_db_pass])
+            config=Config().new_config(argv=['concept','delete','--ont-db-name', dbName,'--crc-db-name', dbName,'--ont-db-host',config.ont_db_host,'--crc-db-host',config.crc_db_host,'--crc-db-pass',config.crc_db_pass,'--ont-db-pass',config.ont_db_pass])
             import i2b2_cdi.concept.runner as concept_runner
-            concept_runner.mod_run(Config.config)
+            concept_runner.mod_run(config)
 
             import i2b2_cdi.fact.runner as fact_runner
-            config=Config().new_config(argv=['fact','delete','--ont-db-name', dbName,'--crc-db-name', dbName,'--ont-db-host',Config.config.ont_db_host,'--crc-db-host',Config.config.crc_db_host,'--crc-db-pass',Config.config.crc_db_pass,'--ont-db-pass',Config.config.ont_db_pass])
-            fact_runner.mod_run(Config.config)
+            config=Config().new_config(argv=['fact','delete','--ont-db-name', dbName,'--crc-db-name', dbName,'--ont-db-host',config.ont_db_host,'--crc-db-host',config.crc_db_host,'--crc-db-pass',config.crc_db_pass,'--ont-db-pass',config.ont_db_pass])
+            fact_runner.mod_run(config)
         except Exception as e:
             logger.error("Failed to perform delete data", e)
         
-def load_data(dbName):
+def load_data(dbName,config):
         try:
-            config=Config().new_config(argv=['concept','load','--ont-db-name', dbName,'--crc-db-name', dbName,'--ont-db-host',Config.config.ont_db_host,'--crc-db-host',Config.config.crc_db_host,'--crc-db-pass',Config.config.crc_db_pass,'--ont-db-pass',Config.config.ont_db_pass,'-i',os.getcwd()+'/examples/amia2020-demo2'])
+            config=Config().new_config(argv=['concept','load','--ont-db-name', dbName,'--crc-db-name', dbName,'--ont-db-host',config.ont_db_host,'--crc-db-host',config.crc_db_host,'--crc-db-pass',config.crc_db_pass,'--ont-db-pass',config.ont_db_pass,'-i',os.getcwd()+'/examples/amia2020-demo2'])
             import i2b2_cdi.concept.runner as concept_runner
-            concept_runner.mod_run(Config.config)
+            concept_runner.mod_run(config)
 
-            config=Config().new_config(argv=['fact','load','--ont-db-name', dbName,'--crc-db-name', dbName,'--ont-db-host',Config.config.ont_db_host,'--crc-db-host',Config.config.crc_db_host,'--crc-db-pass',Config.config.crc_db_pass,'--ont-db-pass',Config.config.ont_db_pass,'-i',os.getcwd()+'/examples/amia2020-demo2'])
-            fact_runner.mod_run(Config.config)
+            config=Config().new_config(argv=['fact','load','--ont-db-name', dbName,'--crc-db-name', dbName,'--ont-db-host',config.ont_db_host,'--crc-db-host',config.crc_db_host,'--crc-db-pass',config.crc_db_pass,'--ont-db-pass',config.ont_db_pass,'-i',os.getcwd()+'/examples/amia2020-demo2'])
+            fact_runner.mod_run(config)
         except Exception as e:
             logger.error("Failed to perform load data", e)
 
@@ -286,7 +285,7 @@ def upgradeProject(args):
         try:
             config=Config().new_config(argv=['project','upgrade','--project-name', args.project_name,'--crc-db-name', args.crc_db_name, '--crc-db-host', args.crc_db_host,'--crc-db-port', args.crc_db_port, '--crc-db-pass', args.crc_db_pass, '--crc-db-user', args.crc_db_user, '--crc-db-type', args.crc_db_type,'--ont-db-name', args.ont_db_name, '--ont-db-host', args.ont_db_host,'--ont-db-port', args.ont_db_port, '--ont-db-pass', args.ont_db_pass, '--ont-db-user', args.ont_db_user, '--ont-db-type', args.ont_db_type])
             import i2b2_cdi.project.runner as project_runner
-            project_runner.mod_run(Config.config)
+            project_runner.mod_run(config)
 
         except Exception as e:
             logger.error("Failed to perform project upgrade", e)

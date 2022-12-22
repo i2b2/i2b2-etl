@@ -28,5 +28,5 @@ DROP TABLE IF EXISTS PATIENT_DIMENSION_TEMP;
         DOWNLOAD_DATE timestamp NULL,
         IMPORT_DATE timestamp NULL,
         SOURCESYSTEM_CD varchar(50) NULL,
-        UPLOAD_ID int NULL
+        UPLOAD_ID bigint NULL
     )

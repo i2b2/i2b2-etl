@@ -19,13 +19,13 @@ from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 from i2b2_cdi.exception.cdi_database_error import CdiDatabaseError
 from i2b2_cdi.log import logger
 
-def get_concept_code_mapping():
+def get_concept_code_mapping(config):
     """Get concept code to concept type mapping from i2b2 instance"""
     concept_map = {}
     try:
         logger.debug('Getting existing concept code to concept type mappings from database')
         query = 'SELECT concept_cd, concept_type FROM concept_dimension'
-        with I2b2crcDataSource() as (cursor):
+        with I2b2crcDataSource(config) as (cursor):
             cursor.execute(query)
             result = cursor.fetchall()
             if result:

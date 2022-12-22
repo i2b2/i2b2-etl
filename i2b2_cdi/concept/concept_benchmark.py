@@ -29,23 +29,23 @@ def concept_benchmark(options):
           
         #delete concept
         config=Config().new_config(argv=['concept','delete'])
-        concept_runner.mod_run(Config.config)
+        concept_runner.mod_run(config)
         
         logger.debug("Concept deleted successfully")
 
-        Config().new_config(argv=['project','add'])
+        # Config().new_config(argv=['project','add'])
 
         startTime = time.time()
         #load concept
         config=Config().new_config(argv=['concept','load','-i', outputPath])
-        concept_runner.mod_run(Config.config)
+        concept_runner.mod_run(config)
 
         timeDiff = time.time() - startTime
 
         logger.debug("Concept loaded successfully")
 
-        conceptDimensionRecordCount = get_concept_count()
-        logger.debug(get_concept_count())
+        conceptDimensionRecordCount = get_concept_count(config)
+        logger.debug(get_concept_count(config))
 
         if conceptDimensionRecordCount > 0:
             conceptCreated = True

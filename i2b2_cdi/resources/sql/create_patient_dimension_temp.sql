@@ -36,6 +36,6 @@ BEGIN
         [DOWNLOAD_DATE] [datetime] NULL,
         [IMPORT_DATE] [datetime] NULL,
         [SOURCESYSTEM_CD] [varchar](50) NULL,
-        [UPLOAD_ID] [int] NULL,
+        [UPLOAD_ID] [bigint] NULL,
     )
 END

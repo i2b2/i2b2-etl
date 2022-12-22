@@ -20,6 +20,8 @@ import subprocess
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource,I2b2metaDataSource
 from i2b2_cdi.exception.cdi_bcp_failed_error import BcpUploadFailedError
 from i2b2_cdi.log import logger
+from time import time
+from i2b2_cdi.common.utils import total_time
 
 
 class PyBCP:
@@ -40,14 +42,15 @@ class PyBCP:
         self.connection = None
 
     #postgressql
-    def execute_sql_pg(self, file_path):
+    @total_time
+    def execute_sql_pg(self, file_path,config):
         """Wrapper method to execute the queries using PSQL command
 
         Args:
             file_path (str): path to the sql script file
         """
         try:
-            dbparams = I2b2crcDataSource()
+            dbparams = I2b2crcDataSource(config)
             with dbparams as cursor:
                 cursor.execute("set search_path to "+dbparams.database)
                 cursor.execute(open(file_path, "r").read())
@@ -56,9 +59,9 @@ class PyBCP:
             logger.error(e)
             raise e
     
-    def upload_facts_pg(self):
+    def upload_facts_pg(self,config):
         try:
-            dbparams = I2b2crcDataSource()
+            dbparams = I2b2crcDataSource(config)
             with dbparams as cursor:
                 with open(self.import_file,'r') as f:
                     cursor.copy_from(f,self.table_name,sep=self.delimiter,null='')
@@ -68,9 +71,9 @@ class PyBCP:
             if self.connection is not None:
                 self.connection.close()
     
-    def upload_concept_pg(self):
+    def upload_concept_pg(self,config):
         try:
-            dbparams = I2b2metaDataSource()
+            dbparams = I2b2metaDataSource(config)
             with dbparams as cursor:
                 with open(self.import_file,'r') as f:
                     cursor.copy_from(f,self.table_name,sep=self.delimiter,null='')
@@ -79,11 +82,12 @@ class PyBCP:
         finally:
             if self.connection is not None:
                 self.connection.close()
-
-    def upload_facts_sql(self):
+    
+    @total_time
+    def upload_facts_sql(self,config):
         """Wrapper method for uploading data file using bcp tool"""
         try:
-            dbparams = I2b2crcDataSource()
+            dbparams = I2b2crcDataSource(config)
             with dbparams:
                 user = dbparams.username
                 password = dbparams.password
@@ -121,16 +125,17 @@ class PyBCP:
             logger.error("BCP upload failed : {}", e)
             raise e
     # BCP file upload 
-    def upload_concepts_sql(self):
+    def upload_concepts_sql(self,config):
         """Wrapper method for uploading data file using bcp tool"""
         try:
             logger.debug('uploading bcp file:{}',self.import_file)
-            dbparams = I2b2metaDataSource()
+            dbparams = I2b2metaDataSource(config)
             with dbparams:
-                user = dbparams.username
-                password = dbparams.password
-                database = dbparams.database
-                server = dbparams.ip +','+dbparams.port
+                user = config.ont_db_user
+                password = config.ont_db_pass
+                database = config.ont_db_name
+                server = config.ont_db_host +','+config.ont_db_port
+
             cmd=["/opt/mssql-tools/bin/bcp",
                                         self.table_name,
                                         "in",
@@ -166,15 +171,17 @@ class PyBCP:
             raise
 
 
-    def execute_sql(self, file_path):
+    def execute_sql(self, file_path, config, dbparams=None):
         """Wrapper method to execute the queries using sqlcmd command
 
         Args:
             file_path (str): path to the sql script file
         """
+        
         try:
-            dbparams = I2b2crcDataSource()
-            with dbparams:
+            if dbparams is None:
+                dbparams=I2b2crcDataSource(config)
+            with dbparams:                
                 user = dbparams.username
                 password = dbparams.password
                 database = dbparams.database
@@ -207,23 +214,24 @@ class PyBCP:
 
 
 
-if __name__ == "__main__":
-    bcp_test = PyBCP(
-        table_name="observation_fact_numbered",
-        import_file="demo/data/csv/deid/bcp/observation_fact.bcp",
-        delimiter="/#/",
-        batch_size=10000,
-        error_file="tmp/err.log")
+# MS :: unused code, it get used only when we run standalone 
+# if __name__ == "__main__":
+#     bcp_test = PyBCP(
+#         table_name="observation_fact_numbered",
+#         import_file="demo/data/csv/deid/bcp/observation_fact.bcp",
+#         delimiter="/#/",
+#         batch_size=10000,
+#         error_file="tmp/err.log")
 
-    """ bcp_test = PyBCP(
-        table_name="concept_dimension",
-        import_file="demo/data/csv/deid/bcp/concepts.bcp",
-        #output_bcp_delimiter = str(Config.config.bcp_delimiter)
-        delimiter=str(Config.config.bcp_delimiter),
-        batch_size=1000,
-        error_file="tmp/err.log") """
+#     """ bcp_test = PyBCP(
+#         table_name="concept_dimension",
+#         import_file="demo/data/csv/deid/bcp/concepts.bcp",
+#         #output_bcp_delimiter = str(Config.config.bcp_delimiter)
+#         delimiter=str(Config.config.bcp_delimiter),
+#         batch_size=1000,
+#         error_file="tmp/err.log") """
     
 
-    bcp_test.execute_sql_pg("sql/create_observation_fact_numbered.sql")
-    bcp_test.upload_facts_pg()
-    bcp_test.execute_sql_pg("sql/load_observation_fact_from_numbered.sql")
+#     bcp_test.execute_sql_pg("sql/create_observation_fact_numbered.sql")
+#     bcp_test.upload_facts_pg()
+#     bcp_test.execute_sql_pg("sql/load_observation_fact_from_numbered.sql")

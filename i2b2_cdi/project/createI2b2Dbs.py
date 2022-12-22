@@ -10,13 +10,13 @@ import argparse
 from loguru import logger
 from i2b2_cdi.database import execSql
 from i2b2_cdi.config.config import Config
-
+import os
 class I2b2DbGenerator():
 
     def __init__(self,dataSource,dbName="i2b2_dev_1"):
-        if(Config.config.crc_db_type=='mssql'):
+        if(os.environ['CRC_DB_TYPE']=='mssql'):
             database_type='sqlserver'
-        elif(Config.config.crc_db_type=='pg'):
+        elif(os.environ['CRC_DB_TYPE']=='pg'):
             database_type='postgresql'
 
         self.linkLk={

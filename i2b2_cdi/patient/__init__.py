@@ -4,4 +4,5 @@
 # of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
 # the terms of the Healthcare Disclaimer.
 #
-from .perform_patient import load_patient_dimension, delete_patient_dimensions, delete_patient_mappings
+#from .perform_patient import load_patient_dimension, delete_patient_dimensions, delete_patient_mappings
+from .perform_patient import load_patient_dimension

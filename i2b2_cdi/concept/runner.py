@@ -25,31 +25,30 @@ def mod_run(options):
                 
             elif options.sub_command=='delete':
                 logger.debug('..running concept delete')
-                delete_concepts()
+                delete_concepts(options)
             elif options.sub_command=='extract':
                 logger.debug('..running concept extract')
-                concept_extract()
+                concept_extract(options)
             elif options.sub_command=='undo':
                 logger.debug('..running concept undo')
-                undo_concepts()
+                undo_concepts(options)
             elif options.sub_command=='benchmark':
                 logger.debug('..running concept benchmark')
                 concept_benchmark(options)
             elif options.sub_command=='count':
                 logger.debug('..running concept count')
-                print(get_concept_count())
+                print(get_concept_count(options))
             elif options.sub_command=='human-path':
                 from i2b2_cdi.derived_fact.populateDerivedConceptJob import humanPathAndCodedPathMap
                 logger.debug('..running concept human-path')
-                humanPathAndCodedPathMap()
+                humanPathAndCodedPathMap(options)
 
     except Exception as e:
         logger.error(e)
         logger.exception(str(e))
 
 if __name__ == "__main__":
-    Config().new_config(argv=sys.argv[1:])
-    options=Config.config
+    options = Config().new_config(argv=sys.argv[1:])
     logger.debug('...ont_db_host:{}',options.ont_db_host)
     logger.debug('...crc_db_host:{}',options.crc_db_host)
     mod_run(options)
