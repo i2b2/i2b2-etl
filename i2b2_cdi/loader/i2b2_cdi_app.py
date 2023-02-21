@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 :mod:`i2b2_cdi_app` -- Load and delete data
 ===========================================
@@ -11,7 +19,6 @@
 .. module:: i2b2_cdi_app
     :platform: Linux/Windows
     :synopsis: module contains api interfaces to delete all data, load data into i2b2.
-
 
 """
 
@@ -50,14 +57,12 @@ responseCodes = {200: 'Success',401: 'Unauthorized (Please make sure username pr
 api = Api(app, default='I2B2 CDI API(s)', default_label='',title="I2B2 Rest API", authorizations=authorizations, security="basicAuth")
 
 nsFacts = Namespace('Facts', description='', path ='/')
-nsPatientSet = Namespace('Patient Set', description='', path='/')
+nsPatientSet = Namespace('Patient Sets', description='', path='/')
 nsOther = Namespace('Other', description='', path='/')
-nsEtl = Namespace('ETL', description='', path='/')
-nsDerivedConcepts = Namespace('Derived Concepts', description='', path='/')
-nsJobStatus = Namespace('Job Status', description='', path='/')
+nsDerivedConcepts = Namespace('Concepts', description='', path='/')
+nsJobStatus = Namespace('Jobs', description='', path='/')
 #We can add more namespaces here to add API(s) under different tags in swagger UI.
 
-api.add_namespace(nsEtl)
 api.add_namespace(nsDerivedConcepts)
 api.add_namespace(nsPatientSet)
 api.add_namespace(nsFacts)
@@ -158,7 +163,7 @@ def get_session_dirs(app,session):
 
     return user_dir,log_dir
 
-@nsEtl.route('/cdi-api/data')
+@nsOther.route('/etl/data')
 @api.doc(description='Delete/Undo Concepts & Facts', params = {'loginProject':'Project Name','operation': 'Operation Name'}, responses=responseCodes, post=False)
 class PerformData(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
@@ -290,7 +295,7 @@ class PerformData(Resource):
         finally:
             etl_logger.info("\nPosting data : operation completed !!\n")
 
-@nsOther.route("/cdi-api/logs",endpoint='logs')
+@nsOther.route("/etl/logs",endpoint='logs')
 @api.doc(description = 'Logs',params = {'loginProject':'login project'}, responses=responseCodes)
 class GetFile(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
@@ -325,7 +330,7 @@ class GetFile(Resource):
             return _exception_response(err)
 
 
-@nsOther.route("/cdi-api/configData")
+@nsOther.route("/etl/configData")
 @api.doc(description='Configuration Details', responses=responseCodes)
 class ConfigData(Resource):
     def get(self):
@@ -343,7 +348,7 @@ class ConfigData(Resource):
         
         return resp
 
-@nsOther.route("/cdi-api/check-database", endpoint='config')
+@nsOther.route("/etl/checkUserDatabase", endpoint='config')
 @api.doc(description = 'Check Database',params = {'loginProject':'login project'},responses=responseCodes)
 class CheckDatabase(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
@@ -379,7 +384,7 @@ class CheckDatabase(Resource):
 #         logger.error('FileNotFoundError')
 #         return"error"
 
-@nsOther.route("/cdi-api/querymaster")
+@nsOther.route("/etl/querymaster")
 @api.expect(projectNameHeader)
 @api.doc(description='Query Master', params={'name':'name'},responses=responseCodes)
 class QueryMaster(Resource):
@@ -390,9 +395,10 @@ class QueryMaster(Resource):
             from i2b2_cdi.derived_concept.queryMaster import getQueryMaster
             return getQueryMaster(request)
         except Exception as e:
+            logger.exception(e)
             return _exception_response("Please check if you are using correct i2b2 version: "+str(e))        
     
-@nsPatientSet.route("/cdi-api/patientSetQueryMaster")
+@nsPatientSet.route("/etl/patientSetQueryMaster")
 @api.expect(projectNameHeader)
 @api.doc(description='Patient Query Master', params={'name':'name'},responses=responseCodes)
 class PatientSetQueryMaster(Resource):
@@ -402,35 +408,35 @@ class PatientSetQueryMaster(Resource):
         from i2b2_cdi.patient.patient_query_master import get_patient_query_master
         return get_patient_query_master(request)
 
-@nsDerivedConcepts.route("/cdi-api/derived-concepts", endpoint='derived concept')
+@nsDerivedConcepts.route("/etl/concepts", endpoint='concepts')
 @api.expect(projectNameHeader)
 class DerivedConcept(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
-    @api.doc(description='Create Derived Concepts', body=updateDerivedConcept, responses=responseCodes)
+    @api.doc(description='Create Concepts', body=updateDerivedConcept, responses=responseCodes)
     def post(self):
-        """Create Derived Concepts"""
+        """Create Concepts"""
         from i2b2_cdi.concept.derivedConcept import processRequest
         return processRequest(request)
     
     @api.doc(description='Get derived concepts details from project, if path is not provided, get all derived concepts else get derived concept based on path provided', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
     def get(self):
-        """Get Derived Concepts"""
+        """Get Concepts"""
         from i2b2_cdi.concept.derivedConcept import processRequest
         return processRequest(request)
     
-    @api.doc(description='Delete Derived Concepts', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
+    @api.doc(description='Delete Concepts', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
     def delete(self):
-        """Delete Derived Concepts"""
+        """Delete Concepts"""
         from i2b2_cdi.concept.derivedConcept import processRequest
         return processRequest(request)
 
-    @api.doc(description='Update Derived Concepts' ,params={'cpath':'coded path', 'hpath':'human path'}, body=updateDerivedConcept, responses=responseCodes)
+    @api.doc(description='Update Concepts' ,params={'cpath':'coded path', 'hpath':'human path'}, body=updateDerivedConcept, responses=responseCodes)
     def put(self):
-        """Update Derived Concepts"""
+        """Update Concepts"""
         from i2b2_cdi.concept.derivedConcept import processRequest
         return processRequest(request)
 
-@nsPatientSet.route("/cdi-api/patient-set")
+@nsPatientSet.route("/etl/patient-set")
 @api.expect(projectNameHeader)
 class PatientSet(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
@@ -441,7 +447,7 @@ class PatientSet(Resource):
         return patientSet(request)
 
 
-@nsFacts.route("/cdi-api/compute-facts")
+@nsFacts.route("/etl/compute-facts")
 @api.expect(projectNameHeader)
 @api.doc(description='Initiate computation of facts for derived concepts from project. If path is not provided, jobs for all derived concepts will be added to derived_concept_job table which is used of for computation by Engine',params={'cpath':'coded path','hpath':'human path'}, responses=responseCodes)
 class PopulateDerivedConcepts(Resource):
@@ -452,18 +458,18 @@ class PopulateDerivedConcepts(Resource):
         return processComputeRequest(request=request, path=request.args.get('cpath'))
 
 
-@nsJobStatus.route("/cdi-api/allDerivedJobsStatus")
+@nsJobStatus.route("/etl/allDerivedJobsStatus")
 @api.expect(projectNameHeader)
-@api.doc(description='Get All Derived Jobs', responses=responseCodes)
+@api.doc(description='Get All Derived Jobs Status', responses=responseCodes)
 class AllDerivedJobsStatus(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
     def get(self):
-        """Get All Derived Jobs"""
+        """Get All Derived Jobs Status"""
         login_project = session['project']
         from i2b2_cdi.derived_concept.jobStatus import allDerivedJobStatus
         return allDerivedJobStatus(login_project)
 
-@nsFacts.route("/cdi-api/facts")
+@nsFacts.route("/etl/facts")
 @api.expect(projectNameHeader)
 class GetFact(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
@@ -490,7 +496,7 @@ class GetFact(Resource):
         # query = "insert into observation_fact (ENCOUNTER_NUM, PATIENT_NUM, INSTANCE_NUM, MODIFIER_CD, PROVIDER_ID, CONCEPT_CD, OBSERVATION_BLOB, START_DATE, UPDATE_DATE, VALTYPE_CD, UNITS_CD, SOURCESYSTEM_CD  ) VALUES\
         # (0,0,1, '@', '@', '" + concept_cd+"', '"+blob+"', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'B', '', 'DEMO')"
 
-@nsJobStatus.route("/cdi-api/derivedJob")
+@nsJobStatus.route("/etl/derivedJob")
 @api.doc(description='Get derived-job', params={'job_host': 'Node address'}, responses=responseCodes)
 class derivedConceptJob(Resource):
     # decorators = [auth.login_required(role='DATA_AUTHOR')]

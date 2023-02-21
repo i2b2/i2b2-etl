@@ -1,27 +1,20 @@
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os,sys
 from loguru import logger
 import re
-    
-def validate_username(func):
-    def wrapper_username(**kwargs):
-        regex = re.compile('[@_!#$%^&*()<>?/\|}{~:];')
-        for key,value in kwargs.items():
-            if key == 'username':
-                if regex.search(kwargs[key]) is not None:
-                    raise Exception('Username contains invalid characters: {}'.format(func.__name__))
-                break
-        return func(**kwargs)
-    return wrapper_username
-
-def validate_password(func):
-    def wrapper_password(**kwargs):
-        for key,value in kwargs.items():
-            if key == 'password':
-                if ";" in kwargs[key]:
-                    raise Exception('Password contains invalid character: {}'.format(func.__name__))
-                break
-        return func(**kwargs)
-    return wrapper_password
 
 def validate_concept_cd(func):
     def wrapper_concept_cd(**kwargs):

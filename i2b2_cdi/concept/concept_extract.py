@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 :mod:`extract_concept` -- extract concepts from conventional i2b2 deployment
 ==========================================
@@ -25,7 +33,7 @@ from i2b2_cdi.database import getPdf
 env_path = Path('i2b2_cdi/resources') / '.env'
 
 
-def concept_extract(config):
+def concept_extract():
     """Extract the concepts from i2b2 instance as _concepts.csv file"""
     logger.info("Extracting concepts")
 
@@ -37,7 +45,7 @@ def concept_extract(config):
     logger.info('running {}',sql)
 
     try:
-        df=getPdf(I2b2metaDataSource(config),sql)
+        df=getPdf(I2b2metaDataSource(),sql)
 
         df.to_csv('output/raw_concepts.csv',index=False,encoding='utf-8')
         #df=df.head()

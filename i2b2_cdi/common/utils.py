@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 :mod:`Utils` -- Shared utilities to to be used in whole project
 ===============================================================
@@ -12,21 +20,17 @@
     :platform: Linux/Windows
     :synopsis: module contains classes and methods implemented as part of shared utilities which can be used in whole project
 
-.. moduleauthor:: kavishwar wagholikar <KWAGHOLIKAR@mgh.harvard.edu>
 
 """
 
-import hashlib
-import base64
+
 import subprocess
 import time
 import os
-import psutil
 from pathlib import Path
 from loguru import logger
 import ntpath
 from datetime import datetime as DateTime
-import csv
 from time import time
 
 date_format = ('%Y-%m-%d', '%Y-%m-%d %H:%M:%S','%Y-%m-%d %H:%M:%S.%f', '%d/%m/%y', '%d/%m/%y %H:%M', '%d/%m/%y %H:%M:%S','%d/%m/%y %H:%M:%S.%f')
@@ -62,67 +66,13 @@ concept_fields = [
     'Dimcode']
 
 
-class Time():
-    """Class implements various methods to calculate time required to perform certain operation"""
 
-    def __init__(self):
-        self.last_time = time.time()
 
-    def timeStep(self):
-        """Calculate the time taken by the particular process and displays it"""
-        x = time.time()
-        process = psutil.Process(os.getpid())
-        print("%2.1fG" % ((process.memory_info().rss) /
-                          (1024 * 1024 * 1024)), end=" ")  # in bytes
-        print("%3.0fs" % ((x - self.last_time)), end=" ")
-        self.last_time = x
 
-def getHash(_txt):
-    d = hashlib.md5(_txt.encode('utf8')).digest()
-    return base64.b64encode(d).replace(
-        ',',
-        '#').replace(
-        '\\',
-        '#').replace(
-            r'\/',
-            '#').replace(
-                '+',
-                'P').replace(
-                    '=',
-                    'E')[
-                        0:10].decode(
-                            "utf-8",
-        "ignore")
-
-def path2Code(path):
-    arr = path.replace('_', '').split('/')[1:]
-    return (('/'.join([a[0:5] + "." + a[-5:] if len(a) > 10 else a for a in arr]) + '-' + getHash(path))[-49:]
-            )[-5:] .replace(',', '#').replace('\\', '#').replace(r'\/', '#').replace('+', 'P').replace('=', 'E')
-
-def getParents(_path):
-    arr = []
-    ancestor = ''  # ancestor
-    for _c in _path[1:].split('/'):
-        ancestor = ancestor + '/' + _c
-        arr.append(ancestor)
-    return arr
 
 def file_len(fname):
-    """Provide the total number of word counts for the specified file
-
-    Args:
-       fname (str): name or path of the file for which, the word count to be calculated
-
-    Returns:
-        int: count of total number of words from the provided file
-
-    """
-    p = subprocess.Popen(['wc', '-l', fname], stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    result, err = p.communicate()
-    if p.returncode != 0:
-        raise IOError(err)
-    return int(result.strip().split()[0])
+    from Mozilla.mozilla_utils import file_len as mozilla_file_len
+    return mozilla_file_len(fname)
 
 
 def mkParentDir(filePath):
@@ -130,8 +80,8 @@ def mkParentDir(filePath):
 
 
 def delete_file_if_exists(_file):
-    if os.path.exists(_file):
-        os.remove(_file)
+    from Mozilla.mozilla_utils import delete_file_if_exists as mozilla_delete_file_if_exists
+    mozilla_delete_file_if_exists(_file)
 
 
 def is_length_exceeded(value, length=50):
@@ -241,67 +191,22 @@ def parse_date(date_str):
         return None
 
 def write_deid_file_header(deid_header, deid_file_path, output_deid_delimiter):
-    """This method writes the header of deid file using csv writer
-
-    Args:
-        deid_file_path (:obj:`str`, mandatory): Path to the deid file.
-
-    """
-    try:
-        with open(deid_file_path, 'a+') as csvfile:
-            writer = csv.DictWriter(
-                csvfile, fieldnames=deid_header, delimiter=output_deid_delimiter, lineterminator='\n')
-            writer.writeheader()
-    except Exception as e:
-        raise e
+    from Mozilla.mozilla_utils import write_deid_file_header as mozilla_write_deid_file_header
+    mozilla_write_deid_file_header(deid_header, deid_file_path, output_deid_delimiter)
 
 def write_to_deid_file(deid_header,_valid_rows_arr, deid_file_path, output_deid_delimiter):
-    """This method writes the list of rows to the deid file using csv writer
+    from Mozilla.mozilla_utils import write_to_deid_file as mozilla_write_to_deid_file
+    mozilla_write_to_deid_file(deid_header,_valid_rows_arr, deid_file_path, output_deid_delimiter)
 
-    Args:
-        _valid_rows_arr (:obj:`str`, mandatory): List of valid facts to be written into deid file.
-        deid_file_path (:obj:`str`, mandatory): Path to the output deid file.
-        output_deid_delimiter (:obj:`str`, mandatory): Delimeter to be used in deid file.
-
-    """
-    try:
-        with open(deid_file_path, 'a+') as csvfile:
-            writer = csv.DictWriter(
-                csvfile, fieldnames=deid_header, delimiter=output_deid_delimiter, lineterminator='\n', extrasaction='ignore')
-            writer.writerows(_valid_rows_arr)
-    except Exception as e:
-        raise e
 
 def write_error_file_header(error_file_header,deid_file_path):
-    """This method writes the header of error file using csv writer
-
-    Args:
-        deid_file_path (:obj:`str`, mandatory): Path to the error file.
-
-    """
-    try:
-        with open(deid_file_path, 'a+') as csvfile:
-            writer = csv.DictWriter(
-                csvfile, fieldnames=error_file_header, delimiter=',', quoting=csv.QUOTE_ALL)
-            writer.writeheader()
-    except Exception as e:
-        raise e
+    from Mozilla.mozilla_utils import write_error_file_header as mozilla_write_error_file_header
+    mozilla_write_error_file_header(error_file_header,deid_file_path)
 
 def write_to_error_file(error_file_header,error_file_path, _error_rows_arr):
-    """This method writes the list of rows to the error file using csv writer
+    from Mozilla.mozilla_utils import write_to_error_file as mozilla_write_to_error_file
+    mozilla_write_to_error_file(error_file_header,error_file_path, _error_rows_arr)
 
-    Args:
-        error_file_path (:obj:`str`, mandatory): Path to the error file.
-        _error_rows_arr (:obj:`str`, mandatory): List of invalid facts to be written into error file.
-
-    """
-    try:
-        with open(error_file_path, 'a+') as csvfile:
-            writer = csv.DictWriter(
-                csvfile, fieldnames=error_file_header, delimiter=',', quoting=csv.QUOTE_ALL, extrasaction='ignore')
-            writer.writerows(_error_rows_arr)
-    except Exception as e:
-        raise e
 
 def write_to_bcp_file(_valid_rows_arr, bcp_file_path, bcp_delimiter,count):
         """This method writes the list of rows to the bcp file using csv writer
