@@ -1,3 +1,17 @@
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import pandas as pd
 import csv
 import os
@@ -14,7 +28,6 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 from i2b2_cdi.common.utils import *
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
-from i2b2_cdi.common.py_bcp import PyBCP
 from pathlib import Path
 import glob
 import shutil
@@ -160,6 +173,7 @@ def run(num_of_concepts,num_of_facts,num_of_partions):
             writer = csv.writer(f)
             writer.writerows(timeArr)
 
+    benchmarkTimeAnalysis(num_of_facts,num_of_partions)
 
 def write_csv(path,header,arr):
     if path == '/usr/src/app/tmp/benchmark/fact_benchmark_result.csv':
@@ -183,7 +197,7 @@ def get_query_analysis(path,num_of_partions,num_of_facts,config=Config().new_con
             stime = time()
             cursor.execute(query)
             timeTaken = time() - stime
-        return [os.path.basename(path).split('/')[-1],timeTaken,'Partitions:{}'.format(num_of_partions),'Num of facts:{}'.format(num_of_facts)]
+        return [query.replace("\n",""),timeTaken,'Partitions:{}'.format(num_of_partions),'Num of facts:{}'.format(num_of_facts)]
     except Exception as e:
         logger.exception('Failed to execute query:{}'.format(e))
 
@@ -250,3 +264,34 @@ def execute_partitions(query,config=Config().new_config(argv=['fact','load'])):
     except Exception as e:
         logger.exception('Failed to execute query:{}'.format(e))
 
+def benchmarkTimeAnalysis(num_of_facts,num_of_partitons):
+    factLoadTime = 0
+    indexCreation = 0
+    obsFactTime = 0
+    dictinctPatientTime = 0
+
+    with open('tmp/timeAnalysis.csv') as f:
+        factLoadTime = sum(float(row[1]) for row in csv.reader(f)  if '_' in row[0])
+
+    with open('tmp/timeAnalysis.csv') as f:
+        for row in csv.reader(f):
+            if row[0] == "'execute_sql_pg'":
+                indexCreation = float(row[1])
+            if row[0] == 'select count(*) from i2b2demodata.observation_fact;':
+                obsFactQuery = row[0]
+                obsFactTime = row[1]
+            if row[0] == 'select count(DISTINCT(patient_num)) from i2b2demodata.observation_fact;':
+                distinctPatientQuery = row[0]
+                dictinctPatientTime = row[1]
+    factLoadTime = factLoadTime - indexCreation
+
+    benchmarkHeader = ['Num_of_facts','Num_of_partitions','Fact_load_time','Index_creation_time','Query','Query_execution_time']
+    if num_of_partitons > 0:
+        benchmarkResult = [[num_of_facts,num_of_partitons,factLoadTime,indexCreation,obsFactQuery,obsFactTime],[num_of_facts,num_of_partitons,factLoadTime,indexCreation,distinctPatientQuery,dictinctPatientTime]]
+    else:
+        benchmarkResult = [[num_of_facts,num_of_partitons,factLoadTime,indexCreation,0,0]]
+    
+    path = '/usr/src/app/tmp/benchmarkTimeAnalysis.csv'
+    write_csv(path,benchmarkHeader,benchmarkResult)
+    
+    os.remove('tmp/timeAnalysis.csv')

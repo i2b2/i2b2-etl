@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import pandas as pd
 from loguru import logger
 from i2b2_cdi.common import str_from_file
@@ -343,44 +351,3 @@ def sqlQuote(unquoted):
         return ''
     ''''''
     return '\''+str(unquoted).replace('\'','\'\'')+'\''
-
-def createUploadIdField_in_table(dbName):
-    if(os.environ['CRC_DB_TYPE']=='mssql'):
-        return '''
-        IF NOT EXISTS (
-            SELECT  * FROM
-                INFORMATION_SCHEMA.COLUMNS
-            WHERE
-                TABLE_NAME = '''+sqlQuote(dbName)+''' AND COLUMN_NAME = 'UPLOAD_ID')
-            BEGIN
-            ALTER TABLE '''+dbName+'''
-                ADD UPLOAD_ID INT
-            END;
-            GO
-        '''
-    elif(os.environ['CRC_DB_TYPE']=='pg'):
-        return '''
-        ALTER TABLE '''+dbName+'''
-         ADD COLUMN IF NOT EXISTS UPLOAD_ID INT;
-        '''
-
-def createConceptTypeField_in_table(dbName):
-    
-    if(os.environ['CRC_DB_TYPE']=='mssql'):
-        return '''
-        IF NOT EXISTS (
-        SELECT  * FROM
-            INFORMATION_SCHEMA.COLUMNS
-        WHERE
-            TABLE_NAME = '''+sqlQuote(dbName)+''' AND COLUMN_NAME = 'CONCEPT_TYPE')
-        BEGIN
-        ALTER TABLE '''+dbName+'''
-            ADD CONCEPT_TYPE VARCHAR(50) NULL
-        END;
-        GO
-    '''
-    elif(os.environ['CRC_DB_TYPE']=='pg'):
-        return '''
-        ALTER TABLE '''+dbName+'''
-        ADD COLUMN IF NOT EXISTS CONCEPT_TYPE VARCHAR(50) NULL;
-        '''

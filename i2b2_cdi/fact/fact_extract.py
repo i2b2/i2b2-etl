@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 :mod:`fact_extract` -- extract facts from conventional i2b2 deployment
 ==========================================
@@ -12,14 +20,12 @@
     :platform: Linux/Windows
     :synopsis: module contains methods for importing, deleting facts
 
-
 """
 from pathlib import Path
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 from i2b2_cdi.log import logger
 import pandas as pd
 from i2b2_cdi.common.constants import *
-import os
 from i2b2_cdi.database import getPdf
 
 env_path = Path('i2b2_cdi/resources') / '.env'

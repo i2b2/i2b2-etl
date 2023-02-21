@@ -1,9 +1,3 @@
---
--- Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
--- This program and the accompanying materials  are made available under the terms 
--- of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
--- the terms of the Healthcare Disclaimer.
---
 
 --RUN ON PM CELL
 INSERT INTO "i2b2pm".dbo."pm_user_data" ("user_id","full_name","password","status_cd") VALUES('test_user_id','Test_User_Name','user_password','A');
