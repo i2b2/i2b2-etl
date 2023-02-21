@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 :mod:`transform_file` -- Convert csv file to bcp
 ================================================
@@ -20,13 +28,11 @@ import os
 from pathlib import Path
 from i2b2_cdi.common.utils import *
 from datetime import datetime as DateTime
-from i2b2_cdi.exception.cdi_max_err_reached import MaxErrorCountReachedError
-from i2b2_cdi.exception.cdi_csv_conversion_error import CsvToBcpConversionError
+from Mozilla.exception.mozilla_cdi_max_err_reached import MaxErrorCountReachedError
+from Mozilla.exception.mozilla_cdi_csv_conversion_error import CsvToBcpConversionError
 from i2b2_cdi.log import logger
-from alive_progress import alive_bar, config_handler
 from i2b2_cdi.config.config import Config
 
-config_handler.set_global(length=50, spinner='triangles2')
 
 class TransformFile:
     """The class provides the various methods for transforming csv data to bcp file"""
@@ -52,7 +58,7 @@ class TransformFile:
             output_bcp_delimiter (:obj:`str`, mandatory): Delimiter of the output bcp file, which will be used while writing bcp file.
 
         """
-        # mallappa:: input arg data check
+        # MS:: input arg data check
         
         
         _valid_rows_arr = []

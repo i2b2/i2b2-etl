@@ -1,6 +1,0 @@
-docs
-**/__pycache__
-**/*.pyc
-**/docker
-**/.gitignore
-**/.git

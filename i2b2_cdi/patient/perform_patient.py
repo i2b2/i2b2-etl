@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 :mod:`perform_patient` -- process patient mapping
 =================================================
@@ -13,40 +21,23 @@
     :synopsis: module contains methods for importing, deleting patient mappings
 
 
-
 """
 
 from pathlib import Path
 import os
-from i2b2_cdi.patient import delete_patient
 from i2b2_cdi.patient import patient_mapping
 from i2b2_cdi.patient import transform_file as TransformFile
 from i2b2_cdi.patient import deid_patient as DeidPatient
-from i2b2_cdi.common.py_bcp import PyBCP
+from i2b2_cdi.common.bulk_uploader import BulkUploader
 from i2b2_cdi.common.utils import *
 from i2b2_cdi.common.constants import *
 from loguru import logger
-from i2b2_cdi.config.config import Config
 from i2b2_cdi.common.utils import total_time
 
-def load_patient_mapping(mrn_files,factfile=None):
-    """Load patient mapping from the given mrn file to the i2b2 instance.
-
-    Args:
-        mrn_files (:obj:`str`, mandatory): Path to the files which needs to be imported
-    """
-    logger.debug("Importing patient mappings")
-    rows_skipped_for_mrn = None
-    try:
-        for file in mrn_files:
-            extractFileName = file.split("/")[-1]  
-            bcp_file_path,rows_skipped_for_mrn = patient_mapping.create_patient_mapping(file,factfile)
-            bcp_upload_patient_mapping(bcp_file_path)               
-        logger.success(SUCCESS)
-        return rows_skipped_for_mrn
-    except Exception as e:
-        logger.error("Failed to load patient mapping : {}", e)
-        raise e
+def load_patient_mapping(mrn_files,factfile=None): 
+    from Mozilla.mozilla_perform_patient import load_patient_mapping as mozilla_load_patient_mapping
+    rows_skipped_for_mrn = mozilla_load_patient_mapping(mrn_files,factfile=None)
+    return rows_skipped_for_mrn
 
 # @total_time
 def load_patient_mapping_from_fact_file(fact_file_list,config):
@@ -93,16 +84,16 @@ def bcp_upload_patient_mapping(bcp_file_path,config):
     error_file = base_dir + "/logs/error_bcp_patient_mappings.log"
     mkParentDir(error_file)
     try:
-        _bcp = PyBCP(
+        bulkUploader = BulkUploader(
             table_name="patient_mapping",
             import_file=bcp_file_path,
             delimiter=str(config.bcp_delimiter),
             batch_size=10000,
             error_file=base_dir + "/logs/error_bcp_patient_mappings.log")
         if(str(config.crc_db_type)=='pg'):
-            _bcp.upload_facts_pg(config)
-        elif(str(config.crc_db_type)=='mssql'):
-            _bcp.upload_facts_sql(config)
+            bulkUploader.upload_facts_pg(config)
+        # elif(str(config.crc_db_type)=='mssql'):
+        #     bulkUploader.upload_facts_sql(config)
         logger.debug('exiting bcp_upload_patient_mapping')
         
     except Exception as e:
@@ -147,7 +138,7 @@ def bcp_upload_patient_dimension(bcp_file_path,config):
     logger.debug("Uploading patient dimensions using BCP")
     base_dir = str(Path(bcp_file_path).parents[2])
     try:
-        _bcp = PyBCP(
+        bulkUploader = BulkUploader(
             table_name="patient_dimension_temp",
             import_file=bcp_file_path,
             delimiter=str(config.bcp_delimiter),
@@ -160,18 +151,18 @@ def bcp_upload_patient_dimension(bcp_file_path,config):
             'create_patient_dimension_temp_pg.sql'
             load_patient_path = Path('i2b2_cdi/resources/sql') / \
             'load_patient_dimension_from_temp_pg.sql'
-            _bcp.execute_sql_pg(create_table_path,config)
-            _bcp.upload_facts_pg(config)
-            _bcp.execute_sql_pg(load_patient_path,config)
-        elif(str(config.crc_db_type)=='mssql'):
-            create_table_path = Path('i2b2_cdi/resources/sql') / \
-            'create_patient_dimension_temp.sql'
-            load_patient_path = Path('i2b2_cdi/resources/sql') / \
-            'load_patient_dimension_from_temp.sql'
-            _bcp.execute_sql(create_table_path,config)
+            bulkUploader.execute_sql_pg(create_table_path,config)
+            bulkUploader.upload_facts_pg(config)
+            bulkUploader.execute_sql_pg(load_patient_path,config)
+        # elif(str(config.crc_db_type)=='mssql'):
+        #     create_table_path = Path('i2b2_cdi/resources/sql') / \
+        #     'create_patient_dimension_temp.sql'
+        #     load_patient_path = Path('i2b2_cdi/resources/sql') / \
+        #     'load_patient_dimension_from_temp.sql'
+        #     bulkUploader.execute_sql(create_table_path,config)
             
-            _bcp.upload_facts_sql(config)
-            _bcp.execute_sql(load_patient_path,config)
+        #     bulkUploader.upload_facts_sql(config)
+        #     bulkUploader.execute_sql(load_patient_path,config)
         logger.info('exiting bcp_upload_patient_dimension')
         
     except Exception as e:

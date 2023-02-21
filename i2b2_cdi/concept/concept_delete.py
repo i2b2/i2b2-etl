@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 :mod:`concept_delete` -- Delete the concepts from i2b2 instance
 ===============================================================
@@ -13,26 +21,19 @@
     :synopsis: module contains methods for deleting concepts
 
 
+
 """
 # __since__ = "2020-05-08"
 
 import os
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource, I2b2metaDataSource
-from i2b2_cdi.exception.cdi_database_error import CdiDatabaseError
+from Mozilla.exception.mozilla_cdi_database_error import CdiDatabaseError
 from loguru import logger
-from flask import request
 from pathlib import Path
 
 def delete_concepts_i2b2_metadata(config):
-    """Delete the metadata for the concepts from i2b2 instance"""
-    try:
-        logger.debug('Deleting data from i2b2 metadata and table_access')
-        queries = ['truncate table i2b2', 'truncate table table_access']
-
-        with I2b2metaDataSource(config) as cursor:
-            delete(cursor, queries)
-    except Exception as e:
-        raise CdiDatabaseError("Couldn't delete data: {0}".format(str(e)))
+    from Mozilla.mozilla_concept_delete import delete_concepts_i2b2_metadata as mozilla_delete_concepts_i2b2_metadata
+    mozilla_delete_concepts_i2b2_metadata(config)
 
 
 def delete_concepts_i2b2_demodata(config):
@@ -79,15 +80,5 @@ def concepts_delete_by_id(config):
             cursor.execute(query)
 
 def delete(cursor, queries):
-    """Execute the provided query using the database cursor
-
-    Args:
-        cursor (:obj:`pyodbc.Connection.cursor`, mandatory): Cursor obtained from the Connection object connected to the database
-        queries (:obj:`list of str`, mandatory): List of delete queries to be executed 
-        
-    """
-    try:
-        for query in queries:
-            cursor.execute(query)
-    except Exception as e:
-        raise CdiDatabaseError("Couldn't delete data: {}".format(str(e)))
+    from Mozilla.mozilla_concept_delete import delete as mozilla_delete
+    mozilla_delete(cursor, queries)

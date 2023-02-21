@@ -1,20 +1,25 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import os
 from threading import Thread
 from loguru import logger
 from i2b2_cdi.config.config import Config
-import pathlib
 from tabulate import tabulate
 
 from datetime import datetime as datetime
 from flask import jsonify, make_response
-import shutil
 import pandas as pd
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -103,6 +108,7 @@ class AsyncLoadDataTask(Thread):
             etl_logger.success(msg)
 
 def generate_new_concept_file(input_dir,errDf):
+    # TBD: refactoring required here, remove the hardcoded string validations.
     try:
         if "type does not exists in csv file" in str(errDf):
             logger.debug("Concept Type column is not available")
@@ -143,7 +149,7 @@ def generate_new_concept_file(input_dir,errDf):
                 
             else:
                 logger.debug("Mandatory column type is missing and fact file is not provided")
-                errDf['error']="Mandatory column type is missing and fact file is not provided"
+                errDf.loc[ errDf['error'] == 'Mandatory column, type does not exists in csv file','error']="Mandatory column type is missing and fact file is not provided"
                 return errDf
         else:
             return errDf

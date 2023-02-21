@@ -1,9 +1,17 @@
-#
-# Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-# This program and the accompanying materials  are made available under the terms 
-# of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-# the terms of the Healthcare Disclaimer.
-#
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 :mod:`perform_fact` -- process facts
 ====================================
@@ -13,128 +21,63 @@
     :synopsis: module contains methods for importing, deleting facts
 
 
-
 """
 
-# from glob import glob
-import glob
-from pathlib import Path
-from i2b2_cdi.fact import deid_fact as DeidFact
-from i2b2_cdi.fact import transform_file as TransformFile
 from i2b2_cdi.log import logger
-from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
-from i2b2_cdi.common.py_bcp import PyBCP
-from i2b2_cdi.common.constants import *
-from i2b2_cdi.fact import delete_fact
-from i2b2_cdi.config.config import Config
-from i2b2_cdi.fact import concept_cd_map as ConceptCdMap
-import time
 import pandas as pd
-import numpy as np
-from i2b2_cdi.fact.TimeAnalysiswithDecorator import total_time
-import os
+from i2b2_cdi.fact.fact_validation_helper import validate_fact_files
+from i2b2_cdi.common.file_util import dirGlob
+from i2b2_cdi.patient.perform_patient import load_patient_mapping_from_fact_file, load_patient_mapping
+from i2b2_cdi.encounter.perform_encounter import create_encounter_mapping
 
-def load_facts(file_list,config):
-    """Load the facts from the given file to the i2b2 instance using bcp tool.
 
-    Args:
-        file_list (:obj:`str`, mandatory): List of files from which facts to be imported
-
-    """
-    
-    try:
-        # Get concept_cd map for fact validation and to decide column
-        concept_map = {}
-        factsErrorsList = []
-        if not config.disable_fact_validation:
-            concept_map = ConceptCdMap.get_concept_code_mapping(config)
-        for _file in file_list:
-            extractFileName = _file.split("/")
-            extractFileName = extractFileName[-1]
-            filename="/usr/src/app/tmp/"+"log_"+extractFileName  
-        
-            deid_file_path, error_file_path = DeidFact.do_deidentify(_file, concept_map,config)
-            logger.debug("Check error logs of fact de-identification if any : " + error_file_path)
-            factsErrorsList.append(error_file_path)
-            bcp_file_path = TransformFile.csv_to_bcp(deid_file_path, concept_map, config)
-
-            for f in glob.glob(bcp_file_path+'/observation_*.bcp'):
-                bcp_upload(f, config)
-                os.remove(f)
-            
-            if(str(config.crc_db_type)=='pg'):
-                create_indexes = Path('i2b2_cdi/resources/sql') / \
-                'create_indexes_observation_fact_pg.sql'
-                pyBcp = PyBCP(
-                table_name='observation_fact',
-                import_file=bcp_file_path,
-                delimiter=str(config.bcp_delimiter),
-                batch_size=10000,
-                error_file="/usr/src/app/tmp/benchmark/logs/error_bcp_facts.log")
-                
-                pyBcp.execute_sql_pg(create_indexes, config)
-        logger.success(SUCCESS)
-        return factsErrorsList
-    except Exception as e:
-        logger.error("Failed to load facts : {}", e)
-        raise
+from i2b2_cdi.common.utils import total_time
+def load_facts(file_list,config): 
+    from Mozilla.mozilla_perform_fact import load_facts as mozilla_load_facts
+    factsErrorsList = mozilla_load_facts(file_list,config) 
+    return factsErrorsList
 
 @total_time
-def bcp_upload(bcp_file_path,config):
-    """Upload the fact data from bcp file to the i2b2 instance
+def bcp_upload(bcp_file_path,config): 
+    from Mozilla.mozilla_perform_fact import bcp_upload as mozilla_bcp_upload
+    mozilla_bcp_upload(bcp_file_path,config)
 
-    Args:
-        bcp_file_path (:obj:`str`, mandatory): Path to the bcp file having fact data
+def fact_load_from_dir(config):
+    input_dir=config.input_dir
+    newFactFileList = []
+    mainErrDf = pd.DataFrame()
+    factErrDf = pd.DataFrame()
+    rowErrDf = pd.DataFrame()
+    factsErrorsList = []
+    newFactFileList,mainErrDf = validate_fact_files(config)
+    logger.info('{} {}',newFactFileList,mainErrDf)
+    if len(newFactFileList)>0:
+        # Load patient mapping
+        #TBD =================================================================================
+        mrnFileList=dirGlob(dirPath=input_dir,fileSuffixList=['mrn_map.csv'])
+        if mrnFileList:
+            logger.debug('Loading mrn mapping from dedicated file')
+            rows_skipped_for_mrn = load_patient_mapping(mrnFileList,newFactFileList)
+        else:
+            rows_skipped_for_mrn = load_patient_mapping_from_fact_file(newFactFileList,config)
+        #========================================================================================
 
-    """
-    logger.debug('entering bcp_upload')
-    logger.debug("Uploading facts using BCP")
-    base_dir = str(Path(bcp_file_path).parents[2])
-    try:
-        if(str(config.crc_db_type)=='pg'):
-            fact_table_name='observation_fact'
-        elif(str(config.crc_db_type)=='mssql'):
-            fact_table_name='observation_fact_numbered'
+        #load_patient_dimension(newFactFileList,config)
+        create_encounter_mapping(newFactFileList,config)
+
+        if newFactFileList:
+            factsErrorsList = load_facts(newFactFileList,config)
+            #Return back 
+
+            rowErrDf = pd.concat([pd.read_csv(f) for f in factsErrorsList],ignore_index=True)
+            rowErrDf.rename(columns={'ValidationError':'error','ErrorRowNumber':'line_num'}, inplace=True)
         
-        _bcp = PyBCP(
-            table_name=fact_table_name,
-            import_file=bcp_file_path,
-            delimiter=str(config.bcp_delimiter),
-            batch_size=10000,
-            error_file=base_dir + "/logs/error_bcp_facts.log")
-
-        if(str(config.crc_db_type)=='pg'):
-            drop_indexes = Path('i2b2_cdi/resources/sql') / \
-            'drop_indexes_observation_fact_pg.sql'
-            create_indexes = Path('i2b2_cdi/resources/sql') / \
-            'create_indexes_observation_fact_pg.sql'
-            _bcp.execute_sql_pg(drop_indexes,config)
-            logger.info("Dropped indexes from observation_fact")
-            _bcp.upload_facts_pg(config)        
-        elif(str(config.crc_db_type)=='mssql'):
-            create_table_path = Path('i2b2_cdi/resources/sql') / \
-            'create_observation_fact_numbered.sql'
-            load_fact_path = Path('i2b2_cdi/resources/sql') / \
-            'load_observation_fact_from_numbered.sql'
-            _bcp.execute_sql(create_table_path,config )
-            _bcp.upload_facts_sql(config)
-            _bcp.execute_sql(load_fact_path,config)
-            
-        logger.debug('exiting bcp_upload')
-        logger.debug('Completed bcp_upload for file:-')
-        logger.debug(bcp_file_path)
-            
-    except Exception as e:
-        logger.error("Failed to uplaod facts using BCP : {}", e)
-        raise
-
-
-
-
-
-
-
-            
+    if rowErrDf is None:
+        factErrDf = mainErrDf
+    else:
+        factErrDf = pd.concat([mainErrDf,rowErrDf], axis=0,ignore_index=True)
+    
+    return factErrDf
 
 
 

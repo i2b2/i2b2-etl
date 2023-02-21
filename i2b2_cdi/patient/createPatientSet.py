@@ -1,3 +1,17 @@
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from loguru import logger
 import os
 import pandas as pd
@@ -21,9 +35,10 @@ def patientSet(request):
         else:
             crc_db_name = os.environ['CRC_DB_NAME']
             ont_db_name = os.environ['ONT_DB_NAME']
-            
-        crc_ds=I2b2crcDataSource()
-        ont_ds=I2b2metaDataSource()
+        
+        config=Config().new_config(argv=['concept','load','--crc-db-name', crc_db_name, '--ont-db-name', ont_db_name])   
+        crc_ds=I2b2crcDataSource(config)
+        ont_ds=I2b2metaDataSource(config)
         crc_ds.database = crc_db_name
         ont_ds.database = ont_db_name
         if request.method == 'POST':

@@ -1,6 +1,22 @@
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from loguru import logger
 from i2b2_cdi.common.utils import parse_date
 import hashlib
+from i2b2_cdi.common.file_util import dirGlob
+import pandas as pd
 
 def validate_header(columns):
     columns = [c.replace('-','').replace('_','').replace(' ','').lower() for c in columns]
@@ -116,3 +132,46 @@ def initialize_defaults(columns,row,encounter_map):
     else:
         if len(row['unitcd'])>50:
             return 'Length of unitcd >50'
+
+def validate_fact_files(config):
+    input_dir=config.input_dir
+    errors = []
+    invalidFactFiles = []
+    newFactFileList = []
+    mainErrDf = pd.DataFrame()
+    factFileList=dirGlob(dirPath=input_dir,fileSuffixList=['facts.csv'])
+    
+    for file in factFileList:
+        factDf = pd.read_csv(file, nrows=1)
+        #converting header columns to lower case.
+        factDf.columns=[x.lower().strip() for x in factDf.columns]
+        factDf['input_file'] = [file for i in range(0,len(factDf))]
+        factDf['line_num'] = [i for i in range(0,len(factDf))]
+
+        # if uploaded file is empty csv with only column headers.
+        if len(factDf)==0: 
+            invalidFactFiles.append(file)
+
+        headerError = validate_header(list(factDf))
+    
+        if len(headerError)>0 and len(factDf)>0:
+            err = 'Mandatory column, {} does not exists in csv file'.format(str(headerError)[1:-1]).replace("'","")
+            errors.append(err)
+
+            # creating temperory fact dataframe to merge with headererror dataframe with new index.
+            data = [[factDf['line_num'][factDf['line_num'].index[0]], str(factDf['input_file'][factDf['input_file'].index[0]]) ]]
+            dummyFactDf = pd.DataFrame(data, columns=['line_num','input_file'])
+
+            headerErrDf = pd.DataFrame(errors, columns=['error']).join(dummyFactDf)
+
+            errors.clear()
+            if 'Mandatory' in str(headerErrDf['error']):
+                invalidFactFiles.append(file)
+            mainErrDf = mainErrDf.append(headerErrDf)
+        
+    if len(invalidFactFiles)>0:
+        newFactFileList = [file for file in factFileList if file not in invalidFactFiles]
+    else:
+        newFactFileList = factFileList
+
+    return newFactFileList,mainErrDf

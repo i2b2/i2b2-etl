@@ -1,3 +1,17 @@
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from loguru import logger
 import os, json
 import pandas as pd
@@ -11,7 +25,7 @@ def processFactRequest(request):
     login_project = request.headers.get('X-Project-Name')
 
     try:
-        if login_project != 'Demo':
+        if login_project != 'Demo' and login_project != None:
             crc_db_name = login_project
             ont_db_name = login_project
         else:
@@ -38,7 +52,10 @@ def getFact(request, crc_ds):
             hpath = request.args.get('hpath')
             if hpath:
                 cpath = humanPathToCodedPath(crc_ds.database, hpath)   
-            query="select cd.concept_path as conceptPath , cd.concept_cd as conceptCode, cd.description as conceptDescription, cd.name_char as conceptName, ob.encounter_num as encounterNum, ob.patient_num as patientNum, ob.end_date as endDate, ob.instance_num as instanceNum, ob.start_date as startDate, ob.units_cd as units, ob.modifier_cd as modifiers, ob.provider_id as providerId, ob.observation_blob as value, ob.sourcesystem_cd as source from observation_fact as ob inner JOIN concept_dimension as cd ON cd.concept_cd = ob.concept_cd where cd.concept_path = ? and ob.patient_num = 0" 
+            if (os.environ["CRC_DB_TYPE"] == 'mssql'):
+                query="select cd.concept_path as conceptPath , cd.concept_cd as conceptCode, cd.description as conceptDescription, cd.name_char as conceptName, ob.encounter_num as encounterNum, ob.patient_num as patientNum, ob.end_date as endDate, ob.instance_num as instanceNum, ob.start_date as startDate, ob.units_cd as units, ob.modifier_cd as modifiers, ob.provider_id as providerId, ob.observation_blob as value, ob.sourcesystem_cd as source from observation_fact as ob inner JOIN concept_dimension as cd ON cd.concept_cd = ob.concept_cd where cd.concept_path = ? and ob.patient_num = 0" 
+            elif(os.environ["CRC_DB_TYPE"] == 'pg'):
+                query='select cd.concept_path as "conceptPath" , cd.concept_cd as "conceptCode", cd.description as "conceptDescription", cd.name_char as "conceptName", ob.encounter_num as "encounterNum", ob.patient_num as "patientNum", ob.end_date as "endDate", ob.instance_num as "instanceNum", ob.start_date as "startDate", ob.units_cd as "units", ob.modifier_cd as "modifiers", ob.provider_id as "providerId", ob.observation_blob as "value", ob.sourcesystem_cd as "source" from observation_fact as ob inner JOIN i2b2demodata.concept_dimension as cd ON cd.concept_cd = ob.concept_cd where cd.concept_path = %s and ob.patient_num = 0' 
             df = pd.read_sql_query(query,crc_ds.connection, params=(cpath,))
             derived_list = list(df.transpose().to_dict().values())
     response = make_response(jsonify(derived_list))
@@ -52,8 +69,12 @@ def deleteFact(request, crc_ds):
             hpath = request.args.get('hpath')
             if hpath:
                 cpath = humanPathToCodedPath(crc_ds.database, hpath)
-            query = "delete from observation_fact where patient_num = 0 and concept_cd = (select concept_cd from concept_dimension where concept_path = ? )"
-            cursor.execute(query, (cpath))    
+            if (os.environ['CRC_DB_TYPE'] == 'mssql'):
+                query = "delete from observation_fact where patient_num = 0 and concept_cd = (select concept_cd from concept_dimension where concept_path = ? )"
+            elif (os.environ['CRC_DB_TYPE'] == 'pg'):
+                query = "delete from observation_fact where patient_num = 0 and concept_cd = (select concept_cd from concept_dimension where concept_path = %s )"
+
+            cursor.execute(query, (cpath,))    
     response = make_response("Deleted successfully")
     response.status_code = 200
     return response

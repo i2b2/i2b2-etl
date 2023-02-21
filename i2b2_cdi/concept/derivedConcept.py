@@ -1,3 +1,17 @@
+# Copyright 2023 Massachusetts General Hospital.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from loguru import logger
 import os
 import pandas as pd
@@ -74,16 +88,16 @@ def getDerivedConcept(request, crc_ds):
             if hpath:
                 cpath = humanPathToCodedPath(crc_ds.database, hpath) 
             if(crc_ds.dbType=='pg'):   
-                query = "SELECT case when cd.concept_type = 'float' then 'NUMERIC' else 'TEXTUAL'end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob,dcj.derived_concept_script, dcj.status,dcj.started_on,dcj.completed_on FROM "+crc_ds.database+".concept_dimension as cd inner JOIN  "+os.environ['CRC_DB_NAME']+".derived_concept_job as dcj ON cd.CONCEPT_PATH=replace(dcj.concept_path,'\\\\','\\') where cd.definition_type IS NOT NULL and cd.definition_type != 'PATIENTSET' and cd.concept_path = {cpath}"
+                query = "SELECT case when cd.concept_type = 'float' then 'NUMERIC' else 'TEXTUAL'end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob,dcj.derived_concept_script, dcj.status,dcj.started_on,dcj.completed_on FROM "+crc_ds.database+".concept_dimension as cd inner JOIN  "+os.environ['CRC_DB_NAME']+".derived_concept_job as dcj ON cd.CONCEPT_PATH=replace(dcj.concept_path,'\\\\','\\') where cd.definition_type IS NOT NULL and dcj.status != 'CANCELLED' and cd.definition_type != 'PATIENTSET' and cd.concept_path = {cpath}"
                 df = pd.read_sql_query(query,crc_ds.connection, params={"cpath":cpath})
             if(crc_ds.dbType=='mssql'):  
-                query = "SELECT case when cd.concept_type = 'float' then 'NUMERIC' else 'TEXTUAL'end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob,dcj.derived_concept_script, dcj.status,dcj.started_on,dcj.completed_on FROM "+crc_ds.database+".dbo.concept_dimension as cd inner JOIN  "+os.environ['CRC_DB_NAME']+".dbo.derived_concept_job as dcj ON cd.CONCEPT_PATH=replace(dcj.concept_path,'\\\\','\\') where cd.definition_type IS NOT NULL and cd.definition_type != 'PATIENTSET' and cd.concept_path = ?"
+                query = "SELECT case when cd.concept_type = 'float' then 'NUMERIC' else 'TEXTUAL'end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob,dcj.derived_concept_script, dcj.status,dcj.started_on,dcj.completed_on FROM "+crc_ds.database+".dbo.concept_dimension as cd inner JOIN  "+os.environ['CRC_DB_NAME']+".dbo.derived_concept_job as dcj ON cd.CONCEPT_PATH=replace(dcj.concept_path,'\\\\','\\') where cd.definition_type IS NOT NULL and dcj.status != 'CANCELLED' and cd.definition_type != 'PATIENTSET' and cd.concept_path = ?"
                 df = pd.read_sql_query(query,crc_ds.connection, params=(cpath,))
         else:
             if(crc_ds.dbType=='pg'):
-                query = "SELECT case when cd.concept_type = 'float' then  'NUMERIC' else 'TEXTUAL' end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob,dcj.derived_concept_script, dcj.status,dcj.started_on,dcj.completed_on FROM "+crc_ds.database+".concept_dimension as cd inner JOIN "+os.environ['CRC_DB_NAME']+".derived_concept_job as dcj ON cd.CONCEPT_PATH=replace(dcj.concept_path,'\\\\','\\') where cd.definition_type IS NOT NULL and cd.definition_type != 'PATIENTSET'"
+                query = "SELECT case when cd.concept_type = 'float' then  'NUMERIC' else 'TEXTUAL' end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob,dcj.derived_concept_script, dcj.status,dcj.started_on,dcj.completed_on FROM "+crc_ds.database+".concept_dimension as cd inner JOIN "+os.environ['CRC_DB_NAME']+".derived_concept_job as dcj ON cd.CONCEPT_PATH=replace(dcj.concept_path,'\\\\','\\') where cd.definition_type IS NOT NULL and dcj.status != 'CANCELLED' and cd.definition_type != 'PATIENTSET'"
             if(crc_ds.dbType=='mssql'):
-                query = "SELECT case when cd.concept_type = 'float' then  'NUMERIC' else 'TEXTUAL' end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob,dcj.derived_concept_script, dcj.status,dcj.started_on,dcj.completed_on FROM "+crc_ds.database+".dbo.concept_dimension as cd inner JOIN "+os.environ['CRC_DB_NAME']+".dbo.derived_concept_job as dcj ON cd.CONCEPT_PATH=replace(dcj.concept_path,'\\\\','\\') where cd.definition_type IS NOT NULL and cd.definition_type != 'PATIENTSET'"
+                query = "SELECT case when cd.concept_type = 'float' then  'NUMERIC' else 'TEXTUAL' end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob,dcj.derived_concept_script, dcj.status,dcj.started_on,dcj.completed_on FROM "+crc_ds.database+".dbo.concept_dimension as cd inner JOIN "+os.environ['CRC_DB_NAME']+".dbo.derived_concept_job as dcj ON cd.CONCEPT_PATH=replace(dcj.concept_path,'\\\\','\\') where cd.definition_type IS NOT NULL and dcj.status != 'CANCELLED' and cd.definition_type != 'PATIENTSET'"
             df = pd.read_sql_query(query,crc_ds.connection)
     df.replace({np.nan: None}, inplace = True) 
     df=df.drop_duplicates(subset=['concept_path'],keep='last')
@@ -132,8 +146,12 @@ def editDerivedConcept(data, request, crc_ds, ont_ds):
     if validateConcept(crc_ds.database, definitionType, cpath):
         description = data['description'] if 'description' in data else None
         blob = data['blob'] if 'blob' in data else {}
-        crc_query = "UPDATE CONCEPT_DIMENSION set concept_blob = ? where concept_path= ?"
-        ont_query = "UPDATE i2b2 set concept_blob= ? where c_fullname= ?"
+        if (os.environ['CRC_DB_TYPE'] == 'mssql'):
+            crc_query = "UPDATE CONCEPT_DIMENSION set concept_blob = ? where concept_path= ?"
+            ont_query = "UPDATE i2b2 set concept_blob= ? where c_fullname= ?"
+        elif (os.environ['CRC_DB_TYPE'] == 'pg'):
+            crc_query = "UPDATE CONCEPT_DIMENSION set concept_blob = %s where concept_path= %s"
+            ont_query = "UPDATE i2b2 set concept_blob= %s where c_fullname= %s"
         with crc_ds as cursor:
             cursor.execute(crc_query,(blob, cpath))
         with ont_ds as cursor:
