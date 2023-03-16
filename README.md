@@ -97,6 +97,11 @@ Change password for user in i2b2
 $ etl project password -c <config-file> --user <user-id> --password <password>
 ```
 
+###  How to Cite
+Wagholikar KB, Ainsworth L, Zelle D, et.al. I2b2-etl: Python application for importing electronic health data into the informatics for integrating biology and the bedside platform. **Bioinformatics**. 2022 Oct 14;38(20):4833-4836. 
+
+
+### License
 
 Copyright 2023 Massachusetts General Hospital.
 Licensed under the Apache License, Version 2.0 (the "License");
