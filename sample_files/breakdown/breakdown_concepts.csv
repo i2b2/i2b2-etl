@@ -1,0 +1,159 @@
+path,code,type
+\i2b2\Demographics\Age\0-9 years old\0 years old\,DEM|AGE:0,Assertion
+\i2b2\Demographics\Age\0-9 years old\1 years old\,DEM|AGE:1,Assertion
+\i2b2\Demographics\Age\0-9 years old\2 years old\,DEM|AGE:2,Assertion
+\i2b2\Demographics\Age\0-9 years old\3 years old\,DEM|AGE:3,Assertion
+\i2b2\Demographics\Age\0-9 years old\4 years old\,DEM|AGE:4,Assertion
+\i2b2\Demographics\Age\0-9 years old\5 years old\,DEM|AGE:5,Assertion
+\i2b2\Demographics\Age\0-9 years old\6 years old\,DEM|AGE:6,Assertion
+\i2b2\Demographics\Age\0-9 years old\7 years old\,DEM|AGE:7,Assertion
+\i2b2\Demographics\Age\0-9 years old\8 years old\,DEM|AGE:8,Assertion
+\i2b2\Demographics\Age\0-9 years old\9 years old\,DEM|AGE:9,Assertion
+\i2b2\Demographics\Age\10-17 years old\10 years old\,DEM|AGE:10,Assertion
+\i2b2\Demographics\Age\10-17 years old\11 years old\,DEM|AGE:11,Assertion
+\i2b2\Demographics\Age\10-17 years old\12 years old\,DEM|AGE:12,Assertion
+\i2b2\Demographics\Age\10-17 years old\13 years old\,DEM|AGE:13,Assertion
+\i2b2\Demographics\Age\10-17 years old\14 years old\,DEM|AGE:14,Assertion
+\i2b2\Demographics\Age\10-17 years old\15 years old\,DEM|AGE:15,Assertion
+\i2b2\Demographics\Age\10-17 years old\16 years old\,DEM|AGE:16,Assertion
+\i2b2\Demographics\Age\10-17 years old\17 years old\,DEM|AGE:17,Assertion
+\i2b2\Demographics\Age\18-34 years old\18 years old\,DEM|AGE:18,Assertion
+\i2b2\Demographics\Age\18-34 years old\19 years old\,DEM|AGE:19,Assertion
+\i2b2\Demographics\Age\18-34 years old\20 years old\,DEM|AGE:20,Assertion
+\i2b2\Demographics\Age\18-34 years old\21 years old\,DEM|AGE:21,Assertion
+\i2b2\Demographics\Age\18-34 years old\22 years old\,DEM|AGE:22,Assertion
+\i2b2\Demographics\Age\18-34 years old\23 years old\,DEM|AGE:23,Assertion
+\i2b2\Demographics\Age\18-34 years old\24 years old\,DEM|AGE:24,Assertion
+\i2b2\Demographics\Age\18-34 years old\25 years old\,DEM|AGE:25,Assertion
+\i2b2\Demographics\Age\18-34 years old\26 years old\,DEM|AGE:26,Assertion
+\i2b2\Demographics\Age\18-34 years old\27 years old\,DEM|AGE:27,Assertion
+\i2b2\Demographics\Age\18-34 years old\28 years old\,DEM|AGE:28,Assertion
+\i2b2\Demographics\Age\18-34 years old\29 years old\,DEM|AGE:29,Assertion
+\i2b2\Demographics\Age\18-34 years old\30 years old\,DEM|AGE:30,Assertion
+\i2b2\Demographics\Age\18-34 years old\31 years old\,DEM|AGE:31,Assertion
+\i2b2\Demographics\Age\18-34 years old\32 years old\,DEM|AGE:32,Assertion
+\i2b2\Demographics\Age\18-34 years old\33 years old\,DEM|AGE:33,Assertion
+\i2b2\Demographics\Age\18-34 years old\34 years old\,DEM|AGE:34,Assertion
+\i2b2\Demographics\Age\35-44 years old\35 years old\,DEM|AGE:35,Assertion
+\i2b2\Demographics\Age\35-44 years old\36 years old\,DEM|AGE:36,Assertion
+\i2b2\Demographics\Age\35-44 years old\37 years old\,DEM|AGE:37,Assertion
+\i2b2\Demographics\Age\35-44 years old\38 years old\,DEM|AGE:38,Assertion
+\i2b2\Demographics\Age\35-44 years old\39 years old\,DEM|AGE:39,Assertion
+\i2b2\Demographics\Age\35-44 years old\40 years old\,DEM|AGE:40,Assertion
+\i2b2\Demographics\Age\35-44 years old\41 years old\,DEM|AGE:41,Assertion
+\i2b2\Demographics\Age\35-44 years old\42 years old\,DEM|AGE:42,Assertion
+\i2b2\Demographics\Age\35-44 years old\43 years old\,DEM|AGE:43,Assertion
+\i2b2\Demographics\Age\35-44 years old\44 years old\,DEM|AGE:44,Assertion
+\i2b2\Demographics\Age\45-54 years old\45 years old\,DEM|AGE:45,Assertion
+\i2b2\Demographics\Age\45-54 years old\46 years old\,DEM|AGE:46,Assertion
+\i2b2\Demographics\Age\45-54 years old\47 years old\,DEM|AGE:47,Assertion
+\i2b2\Demographics\Age\45-54 years old\48 years old\,DEM|AGE:48,Assertion
+\i2b2\Demographics\Age\45-54 years old\49 years old\,DEM|AGE:49,Assertion
+\i2b2\Demographics\Age\45-54 years old\50 years old\,DEM|AGE:50,Assertion
+\i2b2\Demographics\Age\45-54 years old\51 years old\,DEM|AGE:51,Assertion
+\i2b2\Demographics\Age\45-54 years old\52 years old\,DEM|AGE:52,Assertion
+\i2b2\Demographics\Age\45-54 years old\53 years old\,DEM|AGE:53,Assertion
+\i2b2\Demographics\Age\45-54 years old\54 years old\,DEM|AGE:54,Assertion
+\i2b2\Demographics\Age\55-64 years old\55 years old\,DEM|AGE:55,Assertion
+\i2b2\Demographics\Age\55-64 years old\56 years old\,DEM|AGE:56,Assertion
+\i2b2\Demographics\Age\55-64 years old\57 years old\,DEM|AGE:57,Assertion
+\i2b2\Demographics\Age\55-64 years old\58 years old\,DEM|AGE:58,Assertion
+\i2b2\Demographics\Age\55-64 years old\59 years old\,DEM|AGE:59,Assertion
+\i2b2\Demographics\Age\55-64 years old\60 years old\,DEM|AGE:60,Assertion
+\i2b2\Demographics\Age\55-64 years old\61 years old\,DEM|AGE:61,Assertion
+\i2b2\Demographics\Age\55-64 years old\62 years old\,DEM|AGE:62,Assertion
+\i2b2\Demographics\Age\55-64 years old\63 years old\,DEM|AGE:63,Assertion
+\i2b2\Demographics\Age\55-64 years old\64 years old\,DEM|AGE:64,Assertion
+\i2b2\Demographics\Age\65-74 years old\65 years old\,DEM|AGE:65,Assertion
+\i2b2\Demographics\Age\65-74 years old\66 years old\,DEM|AGE:66,Assertion
+\i2b2\Demographics\Age\65-74 years old\67 years old\,DEM|AGE:67,Assertion
+\i2b2\Demographics\Age\65-74 years old\68 years old\,DEM|AGE:68,Assertion
+\i2b2\Demographics\Age\65-74 years old\69 years old\,DEM|AGE:69,Assertion
+\i2b2\Demographics\Age\65-74 years old\70 years old\,DEM|AGE:70,Assertion
+\i2b2\Demographics\Age\65-74 years old\71 years old\,DEM|AGE:71,Assertion
+\i2b2\Demographics\Age\65-74 years old\72 years old\,DEM|AGE:72,Assertion
+\i2b2\Demographics\Age\65-74 years old\73 years old\,DEM|AGE:73,Assertion
+\i2b2\Demographics\Age\65-74 years old\74 years old\,DEM|AGE:74,Assertion
+\i2b2\Demographics\Age\75-84 years old\75 years old\,DEM|AGE:75,Assertion
+\i2b2\Demographics\Age\75-84 years old\76 years old\,DEM|AGE:76,Assertion
+\i2b2\Demographics\Age\75-84 years old\77 years old\,DEM|AGE:77,Assertion
+\i2b2\Demographics\Age\75-84 years old\78 years old\,DEM|AGE:78,Assertion
+\i2b2\Demographics\Age\75-84 years old\79 years old\,DEM|AGE:79,Assertion
+\i2b2\Demographics\Age\75-84 years old\80 years old\,DEM|AGE:80,Assertion
+\i2b2\Demographics\Age\75-84 years old\81 years old\,DEM|AGE:81,Assertion
+\i2b2\Demographics\Age\75-84 years old\82 years old\,DEM|AGE:82,Assertion
+\i2b2\Demographics\Age\75-84 years old\83 years old\,DEM|AGE:83,Assertion
+\i2b2\Demographics\Age\75-84 years old\84 years old\,DEM|AGE:84,Assertion
+\i2b2\Demographics\Age\>= 85 years old\85 years old\,DEM|AGE:85,Assertion
+\i2b2\Demographics\Age\>= 85 years old\86 years old\,DEM|AGE:86,Assertion
+\i2b2\Demographics\Age\>= 85 years old\87 years old\,DEM|AGE:87,Assertion
+\i2b2\Demographics\Age\>= 85 years old\88 years old\,DEM|AGE:88,Assertion
+\i2b2\Demographics\Age\>= 85 years old\89 years old\,DEM|AGE:89,Assertion
+\i2b2\Demographics\Age\>= 85 years old\90 years old\,DEM|AGE:90,Assertion
+\i2b2\Demographics\Age\>= 85 years old\91 years old\,DEM|AGE:91,Assertion
+\i2b2\Demographics\Age\>= 85 years old\92 years old\,DEM|AGE:92,Assertion
+\i2b2\Demographics\Age\>= 85 years old\93 years old\,DEM|AGE:93,Assertion
+\i2b2\Demographics\Age\>= 85 years old\94 years old\,DEM|AGE:94,Assertion
+\i2b2\Demographics\Age\>= 85 years old\95 years old\,DEM|AGE:95,Assertion
+\i2b2\Demographics\Age\>= 85 years old\96 years old\,DEM|AGE:96,Assertion
+\i2b2\Demographics\Age\>= 85 years old\97 years old\,DEM|AGE:97,Assertion
+\i2b2\Demographics\Age\>= 85 years old\98 years old\,DEM|AGE:98,Assertion
+\i2b2\Demographics\Age\>= 85 years old\99 years old\,DEM|AGE:99,Assertion
+\i2b2\Demographics\Age\>= 85 years old\100 years old\,DEM|AGE:100,Assertion
+\i2b2\Demographics\Gender\Male\,DEM|SEX:m,Assertion
+\i2b2\Demographics\Gender\Female\,DEM|SEX:f,Assertion
+\i2b2\Demographics\Gender\Unknown\,DEM|SEX:u,Assertion
+\i2b2\Demographics\Vital Status\Not recorded,DEM|VITAL:@,Assertion
+\i2b2\Demographics\Vital Status\Living,DEM|VITAL:n,Assertion
+\i2b2\Demographics\Vital Status\Deferred,DEM|VITAL:x,Assertion
+\i2b2\Demographics\Vital Status\Deceased,DEM|VITAL:y,Assertion
+\i2b2\Demographics\Race\Aleutian\Aleutian-AL\,DEM|RACE:al,Assertion
+\i2b2\Demographics\Race\Aleutian\Aleutian-ALEUTIAN\,DEM|RACE:aleutian,Assertion
+\i2b2\Demographics\Race\American Indian\American Indian-AMER. INDIAN\,DEM|RACE:amer. indian,Assertion
+\i2b2\Demographics\Race\American Indian\American Indian-I\,DEM|RACE:i,Assertion
+\i2b2\Demographics\Race\Asian Pacific Islander\Asian Pacific Islander-API\,DEM|RACE:api,Assertion
+\i2b2\Demographics\Race\Asian Pacific Islander\Asian Pacific Islander-ASIAN PAC ISL\,DEM|RACE:asian pac. isl,Assertion
+\i2b2\Demographics\Race\Asian\Asian-A\,DEM|RACE:a,Assertion
+\i2b2\Demographics\Race\Asian\Asian-ASIAN\,DEM|RACE:asian,Assertion
+\i2b2\Demographics\Race\Black\Black-B\,DEM|RACE:b,Assertion
+\i2b2\Demographics\Race\Black\Black-BLACK\,DEM|RACE:black,Assertion
+\i2b2\Demographics\Race\Black\Hispanic Black-HIB\,DEM|RACE:hib,Assertion
+\i2b2\Demographics\Race\Black\Hispanic Black-HIS BLACK\,DEM|RACE:his black,Assertion
+\i2b2\Demographics\Race\Eskimo\Eskimo-ES\,DEM|RACE:es,Assertion
+\i2b2\Demographics\Race\Eskimo\Eskimo-ESKIMO\,DEM|RACE:eskimo,Assertion
+\i2b2\Demographics\Race\Eskimo\Eskimo-NA ESK\,DEM|RACE:na.esk,Assertion
+\i2b2\Demographics\Race\Hispanic\Hispanic Black-HIB\,DEM|RACE:hib,Assertion
+\i2b2\Demographics\Race\Hispanic\Hispanic Black-HIS BLACK\,DEM|RACE:his black,Assertion
+\i2b2\Demographics\Race\Hispanic\Hispanic White-HIS WHITE\,DEM|RACE:his white,Assertion
+\i2b2\Demographics\Race\Hispanic\Hispanic White-HIW\,DEM|RACE:hiw,Assertion
+\i2b2\Demographics\Race\Hispanic\Hispanic-H\,DEM|RACE:h,Assertion
+\i2b2\Demographics\Race\Hispanic\Hispanic-HISPANIC\,DEM|RACE:hispanic,Assertion
+\i2b2\Demographics\Race\Indian\Indian-IN\,DEM|RACE:in,Assertion
+\i2b2\Demographics\Race\Indian\Indian-INDIAN\,DEM|RACE:indian,Assertion
+\i2b2\Demographics\Race\Middle Eastern\Middle Eastern-M\,DEM|RACE:m,Assertion
+\i2b2\Demographics\Race\Middle Eastern\Middle Eastern-MID EASTERN\,DEM|RACE:mid.eastern,Assertion
+\i2b2\Demographics\Race\Multiracial\Multiracial-MR\,DEM|RACE:mr,Assertion
+\i2b2\Demographics\Race\Multiracial\Multiracial-MULTI\,DEM|RACE:multi,Assertion
+\i2b2\Demographics\Race\Native American\Native American-NA\,DEM|RACE:na,Assertion
+\i2b2\Demographics\Race\Native American\Native American-NAT AM\,DEM|RACE:nat. am.,Assertion
+\i2b2\Demographics\Race\Native American\Native American-NI\,DEM|RACE:ni,Assertion
+\i2b2\Demographics\Race\Navajo\Navajo-NAVAJO\,DEM|RACE:navajo,Assertion
+\i2b2\Demographics\Race\Navajo\Navajo-NV\,DEM|RACE:nv,Assertion
+\i2b2\Demographics\Race\Not Recorded\Not Recorded-@\,DEM|RACE:@,Assertion
+\i2b2\Demographics\Race\Not Recorded\Not Recorded-D\,DEM|RACE:d,Assertion
+\i2b2\Demographics\Race\Not Recorded\Not Recorded-DEFERRED\,DEM|RACE:deferred,Assertion
+\i2b2\Demographics\Race\Not Recorded\Not Recorded-R\,DEM|RACE:r,Assertion
+\i2b2\Demographics\Race\Not Recorded\Not Recorded-REFUSED\,DEM|RACE:refused,Assertion
+\i2b2\Demographics\Race\Not Recorded\Not Recorded-U\,DEM|RACE:u,Assertion
+\i2b2\Demographics\Race\Not Recorded\Not Recorded-UNK\,DEM|RACE:unk,Assertion
+\i2b2\Demographics\Race\Oriental\Oriental-OR\,DEM|RACE:or,Assertion
+\i2b2\Demographics\Race\Oriental\Oriental-ORIENTAL\,DEM|RACE:oriental,Assertion
+\i2b2\Demographics\Race\Other\Other-O\,DEM|RACE:o,Assertion
+\i2b2\Demographics\Race\Other\Other-OTHER\,DEM|RACE:other,Assertion
+\i2b2\Demographics\Race\White\Hispanic White-HIS WHITE\,DEM|RACE:his white,Assertion
+\i2b2\Demographics\Race\White\Hispanic White-HIW\,DEM|RACE:hiw,Assertion
+\i2b2\Demographics\Race\White\White-C\,DEM|RACE:c,Assertion
+\i2b2\Demographics\Race\White\White-W\,DEM|RACE:w,Assertion
+\i2b2\Demographics\Race\White\White-WHITE\,DEM|RACE:white,Assertion
+\i2b2\Diagnoses\demo_diagnoses,diagnoses_1,Assertion
+\i2b2\Medications\demo_medications,medications_1,Assertion
