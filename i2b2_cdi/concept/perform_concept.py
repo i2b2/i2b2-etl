@@ -156,12 +156,7 @@ def concept_load_from_dir(config):
                                 cursor.execute(sql)
                             except Exception as e:
                                 logger.error("error in :{}",sql)
-                                logger.error(e)
-
-                    # this is required for features - age_breakdown, gender_breakdown, race_breakdown, vital_breakdown
-                    sql = "update table_access  set c_table_cd = 'i2b2_DEMO' where c_fullname ='\\i2b2\\' and c_table_name = 'I2B2'"
-                    cursor.execute(sql)
-                                    
+                                logger.error(e)                           
             else:
                 try:
 

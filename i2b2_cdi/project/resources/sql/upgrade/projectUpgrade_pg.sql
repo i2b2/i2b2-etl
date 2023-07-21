@@ -123,6 +123,13 @@ begin
   end if;
 end $$;
 
+update qt_breakdown_path  set value = 'select b.name_char as patient_range, count(distinct a.patient_num) as patient_count from observation_fact a, concept_dimension b, DX c where a.concept_cd = b.concept_cd and concept_path like ''\\Medications\\%'' and a.patient_num = c.patient_num group by name_char order by patient_count desc limit 20' where name = 'PATIENT_TOP20MEDS_XML';
+update qt_breakdown_path  set value = 'select b.name_char as patient_range, count(distinct a.patient_num) as patient_count from observation_fact a, concept_dimension b, DX c where a.concept_cd = b.concept_cd and concept_path like ''\\Diagnoses\\%'' and a.patient_num = c.patient_num group by name_char order by patient_count desc limit 20' where name = 'PATIENT_TOP20DIAG_XML';
+update qt_breakdown_path  set value = '\\Demographics\Demographics\Gender\' where name = 'PATIENT_GENDER_COUNT_XML';
+update qt_breakdown_path  set value = '\\Demographics\Demographics\Age\' where name = 'PATIENT_AGE_COUNT_XML';
+update qt_breakdown_path  set value = '\\Demographics\Demographics\Vital Status\' where name = 'PATIENT_VITALSTATUS_COUNT_XML';
+update qt_breakdown_path  set value = '\\Demographics\Demographics\Race\' where name = 'PATIENT_RACE_COUNT_XML';
+
 -- RUN ON PM
 insert into  i2b2pm.pm_project_user_roles(project_id,user_id,user_role_cd,status_cd) VALUES
 ('Demo','demo','DATA_AUTHOR','A') ON CONFLICT ON CONSTRAINT pm_project_user_roles_pkey 
