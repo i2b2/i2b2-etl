@@ -34,7 +34,7 @@ from .i2b2_sql_helper import getOntologySql, getMetaDataArr ,getTableAccessArr
 from i2b2_cdi.common import str_from_file, str_to_file, getConcatCsvAsDf
 from i2b2_cdi.log import logger
 from i2b2_cdi.common.constants import *
-from i2b2_cdi.concept.i2b2_sql_helper import getConceptDimSql
+from i2b2_cdi.concept.i2b2_sql_helper import getConceptDimSql, getProviderDimSql
 import pandas as pd
 from i2b2_cdi.common.bulk_uploader import BulkUploader
 
@@ -156,7 +156,8 @@ def concept_load_from_dir(config):
                                 cursor.execute(sql)
                             except Exception as e:
                                 logger.error("error in :{}",sql)
-                                logger.error(e)                           
+                                logger.error(e)
+                                    
             else:
                 try:
 
@@ -213,6 +214,14 @@ def concept_load_from_dir(config):
                         except Exception as e:
                             logger.error("error in :{}",sql)
                             logger.error(e)
+                    
+                    sql_group=getProviderDimSql(config)
+                    for sql in re.split(r'\n\s*GO',sql_group):
+                        try:
+                            cursor.execute(sql)
+                        except Exception as e:
+                            logger.error("error in :{}",sql)
+                            logger.exception(e)
             
             return errDf
 

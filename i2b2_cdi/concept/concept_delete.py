@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 """
 :mod:`concept_delete` -- Delete the concepts from i2b2 instance
 ===============================================================
@@ -42,7 +43,7 @@ def delete_concepts_i2b2_demodata(config):
         logger.debug(
             'Deleting data from i2b2 concept_dimension and derived_concept_job')
         queries = [
-            "delete from concept_dimension"]
+            "delete from concept_dimension","delete from provider_dimension"]
 
         if(config.crc_db_type=='mssql'):
             # queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_definition') BEGIN delete from derived_concept_definition END")
