@@ -300,7 +300,13 @@ def getConceptDimSql(config):
     conceptDimQuery = conceptDimQuery.replace('{UPLOAD_ID}', str(config.upload_id))
     return conceptDimQuery
 
-
+def getProviderDimSql(config):
+    currentFilePath = Path(__file__).parent
+    ProviderDimQuery = str_from_file(str(currentFilePath)+'/resources/sql/provider_dimension.sql')
+    if(config.crc_db_type=='pg'):   
+        ProviderDimQuery = ProviderDimQuery.replace('{METADATA_DB_NAME}', config.ont_db_name)
+        ProviderDimQuery = ProviderDimQuery.replace('{UPLOAD_ID}', str(config.upload_id))
+    return ProviderDimQuery
 
 def getTableAccessSql(sqlDf,existing_sdf,config,inputDir=None):
     
