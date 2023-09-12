@@ -30,6 +30,7 @@ def appendConfigParser(parserLk):
     load_p=subparser.add_parser('load',parents=[parserLk['all_parent_p'],parserLk['crc_parent_p'],parserLk['ont_parent_p'],parserLk['pm_parent_p'],parserLk['upload_parent_p']],help='load patients',default_config_files=default_config_files)
     load_p.add('--max-validation-error-count', default='1000000',type=str,action='store',help="max validation error count")
     del_p=subparser.add_parser('delete',parents=[parserLk['all_parent_p'],parserLk['crc_parent_p'],parserLk['ont_parent_p'],parserLk['pm_parent_p']],help='delete patients',default_config_files=default_config_files)      
+    load_patient_dimension=subparser.add_parser('load-patient-dimension',parents=[parserLk['all_parent_p'],parserLk['crc_parent_p'],parserLk['ont_parent_p'],parserLk['pm_parent_p'],parserLk['upload_parent_p']],help='load patient dimension',default_config_files=default_config_files)
     
     return main_sps
  

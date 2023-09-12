@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 """
 :mod:`perform_patient` -- process patient mapping
 =================================================
@@ -168,3 +169,15 @@ def bcp_upload_patient_dimension(bcp_file_path,config):
     except Exception as e:
         logger.error("Failed to upload patient dimensions using BCP : {}", e)
         raise
+def load_patient_dimension_from_facts(config):
+    try:
+        from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
+        from i2b2_cdi.database import execSql
+        from i2b2_cdi.common.file_util import str_from_file
+
+        ont_ds=I2b2crcDataSource(config)
+        query = str_from_file('i2b2_cdi/resources/sql/load_patient_dimension_from_facts_pg.sql')
+        execSql(ont_ds, query)
+        logger.info("loading patient_dimension from facts completed...")
+    except Exception as e:
+        logger.error(e)
