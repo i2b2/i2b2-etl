@@ -14,7 +14,7 @@
 
 import sys
 from loguru import logger
-from i2b2_cdi.patient import load_patient_dimension,delete_patient
+from i2b2_cdi.patient import load_patient_dimension,delete_patient, load_patient_dimension_from_facts
 from i2b2_cdi.common.file_util import dirGlob
 from i2b2_cdi.config.config import Config
 
@@ -31,12 +31,17 @@ def mod_run(options):
             logger.debug('..running patient delete')
             delete_patient.delete_patient_mapping_i2b2_demodata(options)
             delete_patient.delete_patients_i2b2_demodata(options)
+        elif options.sub_command == 'load-patient-dimension':
+            logger.info("loading patient_dimension")
+            load_patient_dimension_from_facts(options)
+            
+
 
 
 if __name__ == "__main__":
     Config().new_config(argv=sys.argv[1:])
     options=Config.config
-    logger.remove()
-    logger.add(sys.stderr, level=Config.config.logger_level)
+    id=logger.add(sys.stderr, level=Config.config.logger_level)
     mod_run(options)
+    logger.remove(id)
 
