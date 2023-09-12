@@ -36,12 +36,10 @@ def mod_run(options):
             load_patient_dimension_from_facts(options)
             
 
-
-
 if __name__ == "__main__":
     Config().new_config(argv=sys.argv[1:])
     options=Config.config
-    id=logger.add(sys.stderr, level=Config.config.logger_level)
+    logger.remove()
+    logger.add(sys.stderr, level=Config.config.logger_level)
     mod_run(options)
-    logger.remove(id)
 
