@@ -54,8 +54,6 @@ path,code,type
 \Demographics\Race\White\White-C\,DEM|RACE:c,Assertion
 \Demographics\Race\White\White-W\,DEM|RACE:w,Assertion
 \Demographics\Race\White\White-WHITE\,DEM|RACE:white,Assertion
-\Diagnoses\demo_diagnoses,diagnoses_1,Assertion
-\Medications\demo_medications,medications_1,Assertion
 \Demographics\Age\0-9 years old\0 years old\,DEM|AGE:0,Assertion
 \Demographics\Age\0-9 years old\1 years old\,DEM|AGE:1,Assertion
 \Demographics\Age\0-9 years old\2 years old\,DEM|AGE:2,Assertion
@@ -157,3 +155,5 @@ path,code,type
 \Demographics\Age\>= 85 years old\98 years old\,DEM|AGE:98,Assertion
 \Demographics\Age\>= 85 years old\99 years old\,DEM|AGE:99,Assertion
 \Demographics\Age\>= 85 years old\100 years old\,DEM|AGE:100,Assertion
+\Diagnoses\demo_diagnoses,diagnoses_1,Assertion
+\Medications\demo_medications,medications_1,Assertion

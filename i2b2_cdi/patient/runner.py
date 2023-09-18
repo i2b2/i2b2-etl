@@ -36,8 +36,6 @@ def mod_run(options):
             load_patient_dimension_from_facts(options)
             
 
-
-
 if __name__ == "__main__":
     Config().new_config(argv=sys.argv[1:])
     options=Config.config

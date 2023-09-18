@@ -28,6 +28,14 @@ def get_config_modules():
     import glob 
     mPathArr=glob.glob(p+'/*/config_helper.py')
     a= [ m for m in mPathArr if 'config/config_helper' not in m  ]
+    p=str(pathlib.Path(__file__).parent.parent.parent)
+    mPathArr=glob.glob(p+'/*/*/config_helper.py')
+    a = [ m for m in mPathArr if 'config/config_helper' not in m  ]    
+    
+    # mPathArr=glob.glob(p+'/i2b2_cdi/*/config_helper.py')
+    # a = [ m for m in mPathArr if 'config/config_helper' not in m  ]    
+    # mPathArr=glob.glob(p+'/Shells/*/config_helper.py')
+    # a +=  [m for m in mPathArr ]
     return a
 
 def dynamic_importer(module_name, function_name):
@@ -65,7 +73,7 @@ def getArgs(argv=sys.argv):
     if 'CONFIG_FILE' in os.environ:
         default_config_file.append(os.environ['CONFIG_FILE'])
     else:
-         default_config_file.append('etl-mssql.env')
+         default_config_file.append('etl-pgsql.env')
     mainp = configargparse.ArgumentParser(default_config_files=default_config_file)
     mainp.version = '0.1'
     main_sps = mainp.add_subparsers(parser_class=configargparse.ArgParser,help='Mangement Commands',dest="command")
@@ -75,7 +83,7 @@ def getArgs(argv=sys.argv):
     all_parent_p.add('-i','--input-dir', type=str, action='store',default=cwd+'/examples/project1/data/src',help='path to input directory')
     all_parent_p.add('-l','--log', type=str, action='store',default=cwd+'/examples/project1/data/log/',help='path to log directory')
     all_parent_p.add('--logger-level', default='INFO',type=str,action='store',help="logger level")
-    all_parent_p.add('-c', '--config-file', is_config_file=True, default='etl-mssql.env',help='config file path',env_var='CONFIG_FILE')
+    all_parent_p.add('-c', '--config-file', is_config_file=True, default='etl-pgsql.env',help='config file path',env_var='CONFIG_FILE')
     all_parent_p.add('--tmp-dir', type=str, action='store',default=cwd+'/tmp',help='path to tmp directory')
     all_parent_p.add('--public-key-receiver', type=str, action='store',default='public key of enclave for nightly job',help='public key of enclave for nightly job',env_var='PUBLIC_KEY_RECEIVER')
     all_parent_p.add('--private-key-receiver', type=str, action='store',default='private key of enclave for nightly job',help='private key of enclave for nightly job',env_var='PRIVATE_KEY_RECEIVER')
@@ -149,11 +157,15 @@ def getArgs(argv=sys.argv):
 
     try:
         options, unknown = mainp.parse_known_args(argv)
-        logger.remove()
-        logger.add(sys.stderr, level=options.logger_level)
+        try:
+            logger.remove(0)
+            logger.add(sys.stderr,level=options.logger_level)
+        except Exception as e :
+            pass 
+        # logger.add(sys.stderr, level=options.logger_level)
         #logger.add(sys.stderr, level='DEBUG')
         
-        logger.debug('src:{}',mainp.format_values())    # useful for logging where different settings came from
+        # logger.debug('src:{}',mainp.format_values())    # useful for logging where different settings came from
  
         options.root_dir=dirname(realpath(__file__)) + sep + pardir + sep + pardir
         #print("options:")
