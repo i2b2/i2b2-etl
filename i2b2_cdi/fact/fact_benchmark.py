@@ -35,8 +35,12 @@ import shutil
 
 numberOfFacts=''
 def fact_benchmark(options):
-    conceptFactsList = [(concepts,facts,partitions) for concepts in options.num_of_concepts for facts in options.num_of_facts for partitions in options.num_of_partitions]
-    
+    if options.num_of_partitions:
+        conceptFactsList = [(concepts,facts,partitions) for concepts in options.num_of_concepts for facts in options.num_of_facts for partitions in options.num_of_partitions]
+    else:
+        conceptFactsList = [(concepts,facts,0) for concepts in options.num_of_concepts for facts in options.num_of_facts]
+
+
     for i in range(0,options.times):
         for index,tuple in enumerate(conceptFactsList):
             no_of_concepts = tuple[0]

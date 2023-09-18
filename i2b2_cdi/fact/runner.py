@@ -63,6 +63,7 @@ def mod_run(options):
 
 if __name__ == "__main__":
     config = Config().new_config(argv=sys.argv[1:])
-    logger.remove()
-    logger.add(sys.stderr, level=config.logger_level)
+    id=logger.add(sys.stderr, level=config.logger_level)
     mod_run(config)
+    logger.remove(id)
+    

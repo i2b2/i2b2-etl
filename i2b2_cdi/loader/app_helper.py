@@ -31,16 +31,17 @@ LOG_FILE_NAME = 'etl-runtime.log'
 
 class AsyncLoadDataTask(Thread):
     """Class provides the interface to run the data loading task in a thread"""
-    def __init__(self, user_dir, log_dir,login_project,etl_logger):
+    def __init__(self, user_dir, log_dir,login_project,etl_logger,handler_id):
         Thread.__init__(self)
         self.etl_logger=etl_logger
         self.dir_path = user_dir
         self.log_path = log_dir
         self.login_project = login_project
+        self.handler_id=handler_id
 
     def run(self):
         try:
-            etl_logger=self.etl_logger
+            etl_logger=logger.bind(etl=self.login_project)
             crc_db_name = os.environ['CRC_DB_NAME']
             ont_db_name = os.environ['ONT_DB_NAME']            
             if self.login_project and self.login_project != 'Demo':
@@ -61,7 +62,7 @@ class AsyncLoadDataTask(Thread):
                 '--input-file', self.dir_path+'/'+f,
                 '--output-dir', self.dir_path,
                 '--patient-id-field','MRN','--date-time-field', 'start_date','--category-threshold','3'])
-                import i2b2_cdi.excel_extract.runner as excel_extract_runner
+                import Shells.excel_extract.runner as excel_extract_runner
                 excel_extract_runner.mod_run(config)
 
             files = os.listdir(self.dir_path)
@@ -78,34 +79,29 @@ class AsyncLoadDataTask(Thread):
             #determine concept type if concept type column is missing 
             if errDf is not None and len(errDf):
                 errDf = generate_new_concept_file(self.dir_path,errDf)
-                summarize_erroDf(errDf, self.log_path)
+                summarize_erroDf(errDf, self.login_project)
 
             #Fact load call
             import i2b2_cdi.fact.runner as fact_runner
             config=Config().new_config(argv=['fact','load', '--crc-db-type', os.environ['CRC_DB_TYPE'],'--crc-db-name', crc_db_name, '--ont-db-name', ont_db_name, '--upload-id', upload_id,  '--input-dir', self.dir_path])
             errDf = fact_runner.mod_run(config)
             if len(errDf):
-                summarize_erroDf(errDf, self.log_path)
+                summarize_erroDf(errDf, self.login_project)
 
-            logger.add(self.log_path + '/etl-runtime.log',filter=lambda record: record["extra"].get("etl") == True,\
-                 format='{message}')
-            self.etl_logger=logger.bind(etl=True)
 
             # etl_logger.debug("Deleting input files after import")
             msg="\nLoad data : operation completed !!\n"
             etl_logger.success(msg)
             
         except Exception as e:
-            logger.add(self.log_path + '/etl-runtime.log',filter=lambda record: record["extra"].get("etl") == True,\
-                 format='{message}')
-            self.etl_logger=logger.bind(etl=True)
-            self.etl_logger.error(str(e))
+            etl_logger.error(str(e))
         finally:
             #shutil.rmtree(self.dir_path, ignore_errors=True, onerror=None)
             #etl_logger=logger.bind(etl=True)
             etl_logger.info('removing dir:{}',self.dir_path)
             msg="\nLoad data : All operation completed !!\n"
             etl_logger.success(msg)
+            logger.remove(self.handler_id)
 
 def generate_new_concept_file(input_dir,errDf):
     # TBD: refactoring required here, remove the hardcoded string validations.
@@ -179,12 +175,10 @@ def _sucess_response_with_validation_soft_error(message):
     response.status_code = 204
     return response
 
-def summarize_erroDf(errDf, log_path):
+def summarize_erroDf(errDf, login_project):
     # if (errDf is None):
     #     return True
-    logger.add(log_path + '/etl-runtime.log',filter=lambda record: record["extra"].get("etl") == True,\
-                 format='{message}')
-    etl_logger=logger.bind(etl=True)
+    etl_logger=logger.bind(etl=login_project)
     if errDf is not None and len(errDf) > 0:
         # etl_logger.info('Number of errors:{} ',len(errDf))
         arr=[]

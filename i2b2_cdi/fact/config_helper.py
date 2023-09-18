@@ -39,7 +39,7 @@ def appendConfigParser(parserLk):
     benchmark_p.add('--num-of-concepts', type=lambda s: [int(item) for item in s.split(',')],action='store', required=True, help="No of concepts")
     benchmark_p.add('--num-of-facts', type=lambda s: [int(item) for item in s.split(',')],action='store', required=True, help="No of facts")
     benchmark_p.add('--times', type=int, default=1,action='store',help="num of runs")
-    benchmark_p.add('--num-of-partitions', type=lambda s: [int(item) for item in s.split(',')],action='store',help="No of partitons for observation_fact")
+    benchmark_p.add('--num-of-partitions', type=lambda s: [int(item) for item in s.split(',')], default=0, action='store',help="No of partitons for observation_fact")
     determine_concept_type_p=subparser.add_parser('determine-concept-type',parents=[parserLk['all_parent_p'],parserLk['ont_parent_p'],parserLk['crc_parent_p'],parserLk['pm_parent_p'],parserLk['upload_parent_p']],help='Determine concept type from fact file ',default_config_files=default_config_files)      
     determine_concept_type_p.add('--fact-file-dir', type=str ,action='store',required=True,help='Input data directory path')
 

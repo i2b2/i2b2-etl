@@ -78,7 +78,14 @@ updateDerivedConcept = api.model('UpdateDerivedConcept', {
     "description": fields.String,
     "factQuery": fields.String,
     "path": fields.String,
-    "type": fields.String
+    "type": fields.String,
+    "definitionType": fields.String,
+    "blob": fields.String,
+})
+
+deleteDerivedConcept = api.model('DeleteDerivedConcept', {
+    "path": fields.String,
+    "definitionType": fields.String
 })
 
 createPatientSet = api.model('CreatePatientSet', {
@@ -90,9 +97,39 @@ createPatientSet = api.model('CreatePatientSet', {
     "definitionType": fields.String
 })
 
-factBody = api.model('FactBody', {
+
+if os.environ['ENABLE_PATIENT_FACT'] == 'True':
+    get_description= "Get patient level facts" 
+    get_params={'cpath':'coded path', 'hpath':'human path'}
+    delete_description= 'Delete  patient level facts' 
+    delete_params={'cpath':'coded path', 'hpath':'human path', 'mrn':'Medical record number'}
+    post_description= 'Create patient level facts' 
+    postBody  = api.model('FactBody', {
     "concept_path": fields.String,
-    "observation_blob": fields.String
+    "code": fields.String,
+    "mrn": fields.String,
+    "start_date": fields.String,
+    "value": fields.String,
+    })
+else:
+    get_description="Get facts (Where pt_num is zero)"
+    get_params={'cpath':'coded path', 'hpath':'human path'}
+    delete_description= 'Delete facts (Where pt_num is zero)' 
+    delete_params={'cpath':'coded path', 'hpath':'human path'}
+    post_description= 'Create facts (Where pt_num is zero)' 
+    postBody = api.model('FactBody', {
+        "concept_path": fields.String,
+        "observation_blob": fields.String,
+        "host_id": fields.String,
+    })
+
+getAggregationData = api.model('GetAggregationData', {
+    "patientSetName": fields.String,
+    "concept_path": fields.String,
+    "start_time": fields.String,
+    "end_time": fields.String,
+    "derived_type": fields.String,
+    "group_by_month": fields.boolean,
 })
 
 app.config['APP_DIR'] = APP_DIR
@@ -148,20 +185,22 @@ def get_user_roles(userProject):
 
 
 
-def get_session_dirs(app,session):
+def get_session_dirs(app,session,login_project,skip_logger_handler=False):
     user_dir = app.config['APP_DIR'] +  session['user_dir']
     log_dir= app.config['APP_DIR'] +  session['log_dir']
     Path(user_dir).mkdir(parents=True, exist_ok=True)
     Path(log_dir).mkdir(parents=True, exist_ok=True)
-    logger.remove()
-    logger.add(log_dir + '/etl-runtime.log',filter=lambda record: record["extra"].get("etl") == True)
+    # logger.remove()
+    handler_id=None
+    if(not skip_logger_handler):
+        handler_id=logger.add(log_dir + '/etl-runtime.log',filter=lambda record: record["extra"].get("etl") == login_project)
 
     #logger.add("etl.log", filter=lambda record: record["extra"].get("name") == "a")
 
     #with open(log_dir + '/etl-runtime.log','a') as f:
     #    f.write('hi')
 
-    return user_dir,log_dir
+    return user_dir,log_dir,handler_id
 
 @nsOther.route('/etl/data')
 @api.doc(description='Delete/Undo Concepts & Facts', params = {'loginProject':'Project Name','operation': 'Operation Name'}, responses=responseCodes, post=False)
@@ -170,17 +209,18 @@ class PerformData(Resource):
     def delete(self):
         """Delete Data.
         """
-
+ 
         #etl_logger.info("AUTH TOKEN:{}{}{}",request.headers['Authorization'],request.args,session)
-        etl_logger=logger.bind(etl=True)
-        
+  
         login_project = request.args.get('loginProject')
         operation = request.args.get('operation')
-    
+        
         if not login_project:
             return _error_response(error='Login project not provided',status_code=400)
         
-        (user_dir,log_dir)=get_session_dirs(app,session)
+        (user_dir,log_dir,handler_id)=get_session_dirs(app,session,login_project)
+        
+        etl_logger=logger.bind(etl=login_project)
         lp=os.path.join(log_dir, LOG_FILE_NAME)
 
         with open(log_dir + '/etl-runtime.log','w') as f:
@@ -195,6 +235,8 @@ class PerformData(Resource):
                 return response
             except Exception as e:
                 return _error_response(e)
+            finally:
+                logger.remove(handler_id)
         if operation != 'UNDO':
             try:
                 crc_db_name = os.environ['CRC_DB_NAME']
@@ -233,26 +275,27 @@ class PerformData(Resource):
                 etl_logger.info("\nDelete data : operation completed !!\n")
                 msg="\nLoad data : All operation completed !!\n"
                 etl_logger.success(msg)
+                logger.remove(handler_id)
 
     def post(self):
         """This method allows api interface to load data.
         """
 
         #etl_logger.info("AUTH TOKEN:{}{}{}",request.headers['Authorization'],request.args,session)
-        etl_logger=logger.bind(etl=True)
-        
+   
         login_project = request.args.get('loginProject')
         operation = request.args.get('operation')
         if not login_project:
             return _error_response(error='Login project not provided',status_code=400)
         
-        (user_dir,log_dir)=get_session_dirs(app,session)
+        (user_dir,log_dir,handler_id)=get_session_dirs(app,session,login_project)
+        etl_logger=logger.bind(etl=login_project)
         lp=os.path.join(log_dir, LOG_FILE_NAME)
 
         with open(log_dir + '/etl-runtime.log','w') as f:
             f.write(' ')
         etl_logger.info('start')
-        
+
         shutil.rmtree(user_dir, ignore_errors=True, onerror=None)
         try:
             #etl_logger=logger.bind(etl=True)
@@ -284,7 +327,7 @@ class PerformData(Resource):
                 filename = file.filename
                 file.save(os.path.join(user_dir, filename))
         
-            async_task = AsyncLoadDataTask(user_dir, log_dir,login_project,etl_logger)
+            async_task = AsyncLoadDataTask(user_dir, log_dir,login_project,etl_logger,handler_id)
             async_task.start()
             
             etl_logger.info("completed Posting data..")
@@ -304,7 +347,7 @@ class GetFile(Resource):
         login_project = request.args.get('loginProject')
         if not login_project:
             login_project = 'Demo'
-        (user_dir,log_dir)=get_session_dirs(app,session)
+        (user_dir,log_dir,handler_id)=get_session_dirs(app,session,login_project,True)
         try:
 
             lp=os.path.join(log_dir, LOG_FILE_NAME)
@@ -415,25 +458,25 @@ class DerivedConcept(Resource):
     @api.doc(description='Create Concepts', body=updateDerivedConcept, responses=responseCodes)
     def post(self):
         """Create Concepts"""
-        from i2b2_cdi.concept.derivedConcept import processRequest
+        from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
     
     @api.doc(description='Get derived concepts details from project, if path is not provided, get all derived concepts else get derived concept based on path provided', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
     def get(self):
         """Get Concepts"""
-        from i2b2_cdi.concept.derivedConcept import processRequest
+        from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
     
-    @api.doc(description='Delete Concepts', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
+    @api.doc(description='Delete Concepts',body=deleteDerivedConcept, params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
     def delete(self):
         """Delete Concepts"""
-        from i2b2_cdi.concept.derivedConcept import processRequest
+        from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
 
     @api.doc(description='Update Concepts' ,params={'cpath':'coded path', 'hpath':'human path'}, body=updateDerivedConcept, responses=responseCodes)
     def put(self):
         """Update Concepts"""
-        from i2b2_cdi.concept.derivedConcept import processRequest
+        from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
 
 @nsPatientSet.route("/etl/patient-set")
@@ -443,7 +486,7 @@ class PatientSet(Resource):
     @api.doc(description='Create Patient Set', body=createPatientSet, responses=responseCodes)
     def post(self):
         """Create Patient Set"""
-        from i2b2_cdi.patient.createPatientSet import patientSet
+        from Shells.patientSet.createPatientSet import patientSet
         return patientSet(request)
 
 
@@ -454,7 +497,7 @@ class PopulateDerivedConcepts(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
     def post(self):
         """Compute Facts"""
-        from i2b2_cdi.derived_fact.populateDerivedConceptJob import processComputeRequest
+        from Shells.derived_fact.populateDerivedConceptJob import processComputeRequest
         return processComputeRequest(request=request, path=request.args.get('cpath'))
 
 
@@ -473,19 +516,19 @@ class AllDerivedJobsStatus(Resource):
 @api.expect(projectNameHeader)
 class GetFact(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
-    @api.doc(description='Get facts(Get the facts where pt_num is zero)', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
+    @api.doc(description=get_description, params=get_params, responses=responseCodes)
     def get(self):
         """Get Facts"""
         from i2b2_cdi.fact.fact_API import processFactRequest
         return processFactRequest(request)
 
-    @api.doc(description='Delete fact (Get the facts where pt_num is zero)', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
+    @api.doc(description=delete_description, params=delete_params, responses=responseCodes)
     def delete(self):
         """Delete Facts"""
         from i2b2_cdi.fact.fact_API import processFactRequest
         return processFactRequest(request)
     
-    @api.doc(description='Create facts(Create the facts with pt_num is zero)', body=factBody, responses=responseCodes)
+    @api.doc(description=post_description, body=postBody, responses=responseCodes)
     def post(self):
         "Add fact"
         from i2b2_cdi.fact.fact_API import processFactRequest
@@ -502,9 +545,19 @@ class derivedConceptJob(Resource):
     # decorators = [auth.login_required(role='DATA_AUTHOR')]
     def get(self):
         """Get derived job"""
-        from i2b2_cdi.derived_fact.derivedConceptJob import getJobs
+        from Shells.derived_fact.derivedConceptJob import getJobs
         response = make_response(getJobs(request))
         return response
+
+@nsPatientSet.route("/etl/computeAggregationData")
+@api.expect(projectNameHeader)
+class Records(Resource):
+    decorators = [auth.login_required(role='DATA_AUTHOR')]
+    @api.doc(description='get Patient Records', body=getAggregationData, responses=responseCodes)
+    def post(self):
+        """get Patient records"""
+        from Shells.aggregation.aggregation import computeAggregationData
+        return computeAggregationData(request)
 
 # driver function
 if __name__ == '__main__':

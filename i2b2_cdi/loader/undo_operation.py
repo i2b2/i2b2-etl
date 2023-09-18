@@ -42,8 +42,8 @@ def undo_operation(login_project):
         password=os.environ['CRC_DB_PASS'],
         dbType=os.environ['CRC_DB_TYPE'])
 
-        upload_id_concept,upload_id_fact,data_flag,volume_flag=get_upload_id_vol_flags(proj_ds)   
-        etl_logger=logger.bind(etl=True)
+        upload_id_concept,upload_id_fact,data_flag,volume_flag=get_upload_id_vol_flags(proj_ds,login_project)   
+        etl_logger=logger.bind(etl=login_project)
 
         etl_logger.info("Deleting data..")
         # check which is last operation
@@ -81,7 +81,7 @@ def undo_operation(login_project):
         return _error_response(e)
         
 
-def get_upload_id_vol_flags(proj_ds): 
+def get_upload_id_vol_flags(proj_ds,login_project): 
     '''
     This function fetches the upload id and generate the data & volume flag
     used in Undo operation and check_database(enabling undo and delete buttons)
@@ -92,7 +92,7 @@ def get_upload_id_vol_flags(proj_ds):
     volume_flag=False
     upload_id_concept=0
     upload_id_fact=0
-    etl_logger=logger.bind(etl=True)
+    etl_logger=logger.bind(etl=login_project)
 
     try:
         with proj_ds as cursor:
@@ -147,7 +147,7 @@ def check_db_status():
         username=os.environ['CRC_DB_USER'],
         password=os.environ['CRC_DB_PASS'],
         dbType=os.environ['CRC_DB_TYPE'])
-        upload_id_concept,upload_id_fact,data_flag,volume_flag=get_upload_id_vol_flags(proj_ds)   
+        upload_id_concept,upload_id_fact,data_flag,volume_flag=get_upload_id_vol_flags(proj_ds,login_project)   
         response = make_response(jsonify({
         "data":data_flag,
         "volume_data":volume_flag}))
