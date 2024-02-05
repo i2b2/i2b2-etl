@@ -33,6 +33,8 @@ def processRequest(request):
         requestBody = requestDict.decode("UTF-8")
         if len(requestBody) > 0:
             requestBody = json.loads(requestBody)
+
+
         login_project = request.headers.get('X-Project-Name')
         if login_project != 'Demo':
             crc_db_name = login_project
@@ -53,6 +55,7 @@ def processRequest(request):
             response = getConcept(request, crc_ds)
         elif request.method == 'DELETE':
             response = deleteConcept(request, crc_ds, ont_ds)             
+
         elif request.method == 'PUT':
             response = editConcept(requestBody, request, crc_ds, ont_ds)    
             
@@ -68,7 +71,9 @@ def postConcept(data, crc_db, ont_db,crc_ds=None,ont_ds=None):
     givenPath[len(givenPath) - 2] = code
 
     modifiedPath='\\'.join(givenPath)
+
     deleteConcept(None,crc_ds,ont_ds,modifiedPath)
+
     validateCodePath(code=code, path=path)
     response = generate_load_csv(data, crc_db, ont_db)
     return response
@@ -81,7 +86,9 @@ def getConcept(request, crc_ds):
             if hpath:
                 cpath = humanPathToCodedPath(crc_ds.database, hpath) 
             if(crc_ds.dbType=='pg'):   
+
                 query = "SELECT case when cd.concept_type = 'float' then 'NUMERIC' else 'TEXTUAL'end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob FROM "+crc_ds.database+".concept_dimension as cd  where cd.concept_path ilike %s"
+
                 df = pd.read_sql_query(query,crc_ds.connection, params=(cpath,))
             if(crc_ds.dbType=='mssql'):  
                 query = "SELECT case when cd.concept_type = 'float' then 'NUMERIC' else 'TEXTUAL'end as type,cd.description,cd.concept_path,concept_cd,cd.update_date,cd.unit_cd,cd.concept_blob FROM "+crc_ds.database+".dbo.concept_dimension as cd where cd.concept_path = ?"
@@ -97,6 +104,7 @@ def getConcept(request, crc_ds):
     derived_list = list(df.transpose().to_dict().values())
     response = (jsonify(derived_list), 200)
     return response
+
 
 def deleteConcept(request, crc_ds, ont_ds,cpath=None):
     try:
@@ -130,12 +138,15 @@ def deleteConcept(request, crc_ds, ont_ds,cpath=None):
     except Exception as e:
         logger.error(e)
         return e
+
 def editConcept(data, request, crc_ds, ont_ds):
     cpath = request.args.get('cpath')
     hpath = request.args.get('hpath')
     if hpath:
         cpath = humanPathToCodedPath(crc_ds.database, hpath)
+
     if validateConcept(crc_ds.database, cpath):
+
         description = data['description'] if 'description' in data else None
         blob = data['blob'] if 'blob' in data else {}
         if (os.environ['CRC_DB_TYPE'] == 'mssql'):
@@ -160,17 +171,21 @@ def generate_load_csv(data, crc_db, ont_db):
 
         path = data['path'] if 'path' in data else data['conceptPath']
 
+
         if 'ML' in path :
             name = path.split('\\')[-2]
         else:
             name = path.split('\\')[-1]
+
         
         description = data['description'] if 'description' in data else None
         
         unit = data['unit'] if 'unit' in data else None
         updatedOn = data['updatedOn'] if 'updatedOn' in data else None
 
+
         concept_type = data['type'] if 'type' in data else 'largeString'
+
 
         blob = data['blob'] if 'blob' in data else None
         
@@ -180,9 +195,11 @@ def generate_load_csv(data, crc_db, ont_db):
             "type": concept_type,
             "description": description,
             "unit": unit,
+
             "blob": blob }
 
         row = [['type','unit','path','name','code','description','blob'],[concept_type,unit,path,name,code,description,blob]]
+
 
         now = datetime.now()
         dfstring = now.strftime("%d-%m-%Y_%H:%M:%S%f")
@@ -212,15 +229,19 @@ def generate_load_csv(data, crc_db, ont_db):
     except Exception as err:
         return _exception_response(err)
 
+
 def validateConcept(dbName, path):
+
     config=Config().new_config(argv=['concept','load','--crc-db-name', dbName])
     crc_ds = I2b2crcDataSource(config)
     with crc_ds as conn:
         if(config.crc_db_type=='mssql'):
+
             query="select count(*) from concept_dimension where concept_path = ? "
         elif(config.crc_db_type=='pg'):
             query="select count(*) from concept_dimension where concept_path = %s "
         df = pd.read_sql_query(query,conn.connection, params=(path,))
+
     if len(df) > 0 :
         return True
     return False 

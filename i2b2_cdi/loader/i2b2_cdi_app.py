@@ -87,6 +87,7 @@ updateConcept = api.model('UpdateConcept', {
     "factQuery": fields.String,
     "path": fields.String,
     "type": fields.String,
+
     "blob": fields.String,
 })
 
@@ -100,6 +101,7 @@ applyMLConcept = api.model('applyMLConcept', {
     
     "path": fields.String,
     "target_path": fields.String
+
 })
 
 createPatientSet = api.model('CreatePatientSet', {
@@ -119,6 +121,7 @@ if os.environ['ENABLE_PATIENT_FACT'] == 'True':
     delete_params={'cpath':'coded path', 'hpath':'human path', 'mrn':'Medical record number'}
     post_description= 'Create patient level facts' 
     postBody  = api.model('FactBody', {
+
     "concept_path": fields.String,
     "code": fields.String,
     "mrn": fields.String,
@@ -144,6 +147,7 @@ getAggregationData = api.model('GetAggregationData', {
     "end_time": fields.String,
     "derived_type": fields.String,
     "group_by_month": fields.Boolean
+
 })
 
 app.config['APP_DIR'] = APP_DIR
@@ -482,7 +486,7 @@ class Concept(Resource):
         from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
     
-    @api.doc(description='Delete Concepts', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
+    @api.doc(description='Delete Concepts',body=deleteDerivedConcept, params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
     def delete(self):
         """Delete Concepts"""
         from i2b2_cdi.concept.concept_API import processRequest

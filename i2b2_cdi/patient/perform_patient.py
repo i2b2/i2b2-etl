@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 """
 :mod:`perform_patient` -- process patient mapping
 =================================================
@@ -175,8 +176,10 @@ def load_patient_dimension_from_facts(config):
         from i2b2_cdi.common.file_util import str_from_file
 
         ont_ds=I2b2crcDataSource(config)
+
         file_path = get_package_path('i2b2_cdi/resources/sql/load_patient_dimension_from_facts_pg.sql')
         query = str_from_file(file_path)
+
 
         execSql(ont_ds, query)
         logger.info("loading patient_dimension from facts completed...")
