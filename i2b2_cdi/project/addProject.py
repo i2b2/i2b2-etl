@@ -31,9 +31,11 @@ from .createI2b2Dbs import I2b2DbGenerator
 from os.path import dirname, realpath, sep, pardir
 import re
 from i2b2_cdi.config.config import Config
-
+import os
 #from .createI2b2Dbs import I2b2DbGenerator
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource, I2b2metaDataSource,I2b2pmDataSource,I2b2hiveDataSource
+from i2b2_cdi.common.file_util import get_package_path
+from i2b2_cdi.common.bulk_uploader import BulkUploader
 
 
 sql_resource_dir='i2b2_cdi/resources/sql/i2b2/'
@@ -61,7 +63,9 @@ WHERE  T.type_desc = 'USER_TABLE';
         dataSourceSource.execSql(sql,autocommit=False)
         
 def copy_indexes(dataSourceSource,dataSourceTarget,dbSource,targetDb):
-    sql=str_from_file(sql_resource_dir+'createDataBase/indexGenerationScript.sql')
+
+    sql_file_path = get_package_path('i2b2_cdi/project/resources/sql/createDataBase/indexGenerationScript.sql') 
+    sql=str_from_file(sql_file_path)
     logger.debug(sql)
     pdf=dataSourceSource.getPdf(sql)
     
@@ -126,8 +130,9 @@ def addI2b2Project(config,pmDataSource,hiveDataSource,projectName='proj1',pmDbNa
     
     encoded_password=hashlib.md5(projectUserPassword.encode())
 
-    sql_resource_dir=dirname(realpath(__file__)) + sep + pardir + sep + pardir +sep+'i2b2_cdi/project/resources/'
-    sql=str_from_file(sql_resource_dir+'sql/addproject/addProject.sql')
+    sql_file_path = get_package_path('i2b2_cdi/project/resources/sql/addproject/addProject.sql') 
+    sql=str_from_file(sql_file_path)
+
     sql=sql.replace('proj1',projectName)
     sql=sql.replace('demouser',projectName)
     sql=sql.replace('test_user_id',projectName)
@@ -171,7 +176,9 @@ def copyDemoData(args):
             sql=sql.replace('i2b2demodata',args.crc_db_name)
             projsql=sql.replace('i2b2metadata',args.ont_db_name)
         elif(args.crc_db_type=='pg'):
-            sql=str_from_file(sql_resource_dir+'sql/copydemodata/copy_demodata_postgres.sql')
+            sql_file_path = get_package_path('i2b2_cdi/project/resources/sql/copydemodata/copy_demodata_postgres.sql') 
+            sql=str_from_file(sql_file_path)
+            
             sql=sql.replace('user_schema',args.project_name)
             sql=sql.replace('i2b2demodata.dbo',args.crc_db_name)
             projsql=sql.replace('i2b2metadata.dbo',args.ont_db_name)
@@ -232,13 +239,13 @@ def addI2b2ProjectWrapper(args):
         
         copyDemoData(args)
         upgradeProject(args)
+        runTotalNum(args)
     
     except Exception as e:
         logger.error(e)
         raise(e)
 
 def change_password(args):
-    print(args)
     try:
         proj_ds=I2b2pmDataSource(args)
         proj_ds.check_database_connection(args)
@@ -328,7 +335,27 @@ def modifyDigest(str):
             modifiedString += str[i]
             
     return modifiedString    
-  
+
+def runTotalNum(args):
+    import glob
+    files_path = get_package_path('i2b2_cdi/project/resources/sql/totalNum')
+    files_path =  files_path + '/*.sql'
+    queries = glob.glob(files_path)
+    crc_ds=I2b2crcDataSource(args)        
+    bulk_uploader = BulkUploader(
+        table_name='observation_fact',
+        import_file='',
+        delimiter=',',
+        batch_size=10000,
+        error_file="/usr/src/app/tmp/logs/error.log")
+
+    targetDb=args.project_name
+    if targetDb != 'demo':
+        args.crc_db_name=args.project_name
+        args.ont_db_name=args.project_name
+    for file_path in queries:
+        bulk_uploader.execute_sql_pg(file_path,args)
+
 
 if __name__ == "__main__":
     #logger.add(sys.stderr, level="TRACE")

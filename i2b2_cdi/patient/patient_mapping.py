@@ -230,6 +230,8 @@ def create_patient_mapping_file_from_fact_file(fact_file,config):
                         salt=config.mrn_hash_salt
                         if salt=='':
                             mrn= row[mrn_index]
+                        elif config.mrn_are_patient_numbers == True:
+                            mrn= row[mrn_index]
                         else:
                             mrnSalt = salt + str(row[mrn_index])
                             mrn=hashlib.sha512(mrnSalt.encode('utf-8')).hexdigest()
@@ -246,7 +248,7 @@ def create_patient_mapping_file_from_fact_file(fact_file,config):
         logger.debug('exiting create_patient_mapping_file_from_fact_file')
         return patient_mapping_file_path
     except Exception as e:
-        logger.error('Failed to create mrn file from fact file : {}', e)
+        logger.exception('Failed to create mrn file from fact file : {}', e)
 
 def get_patient_mapping(config,ide_src=None):
     from Mozilla.mozilla_patient_mapping import get_patient_mapping as mozilla_get_patient_mapping

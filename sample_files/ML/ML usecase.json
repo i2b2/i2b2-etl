@@ -1,0 +1,13 @@
+Build Model Payload 
+{
+"code": "diabetes_test",
+"description": "Diabetes training",
+"path": "ml\\diabetes_test",   
+"blob" : "{'concept_script': 'demo', 'positive_path': ['\\Diabetes\\positive\\'],'negative_path': ['\\Diabetes\\negative\\'], 'time_buffer': 0}"
+}
+
+Apply Model Payload 
+{
+"path": "\\ml\\diabetes_test\\",
+"target_path": "\\Diabetes\\target\\"
+}

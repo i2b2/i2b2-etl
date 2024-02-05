@@ -25,7 +25,7 @@
 import os
 from flask import Flask, request, jsonify, make_response, send_from_directory,session,send_file
 from flask.globals import session
-from i2b2_cdi.database.cdi_database_connections import I2b2pmDataSource
+from i2b2_cdi.database.cdi_database_connections import I2b2pmDataSource, I2b2crcDataSource
 from loguru import logger
 from i2b2_cdi.config.config import Config
 from pathlib import Path
@@ -54,38 +54,52 @@ authorizations = {
 
 responseCodes = {200: 'Success',401: 'Unauthorized (Please make sure username provided is correct and does not contain more than one backslash(\))',500: 'Internal Server Error'}
 
-api = Api(app, default='I2B2 CDI API(s)', default_label='',title="I2B2 Rest API", authorizations=authorizations, security="basicAuth")
+api = Api(app, default='I2B2 API(s)', default_label='',title="I2B2 JSON API", authorizations=authorizations, security="basicAuth")
 
 nsFacts = Namespace('Facts', description='', path ='/')
 nsPatientSet = Namespace('Patient Sets', description='', path='/')
 nsOther = Namespace('Other', description='', path='/')
-nsDerivedConcepts = Namespace('Concepts', description='', path='/')
+nsConcepts = Namespace('Concepts', description='', path='/')
+nsMLConcepts = Namespace('ML Concepts', description='', path='/')
 nsJobStatus = Namespace('Jobs', description='', path='/')
 #We can add more namespaces here to add API(s) under different tags in swagger UI.
 
-api.add_namespace(nsDerivedConcepts)
-api.add_namespace(nsPatientSet)
+api.add_namespace(nsConcepts)
+api.add_namespace(nsMLConcepts)
+# api.add_namespace(nsPatientSet)
 api.add_namespace(nsFacts)
-api.add_namespace(nsJobStatus)
+# api.add_namespace(nsJobStatus)
 api.add_namespace(nsOther)
 
 
 projectNameHeader = api.parser()
-projectNameHeader.add_argument('X-Project-Name', location='headers')
+projectNameHeader.add_argument('X-Project-Name', location='headers', default = 'Demo')
 
-updateDerivedConcept = api.model('UpdateDerivedConcept', {
+createConcept = api.model('createConcept', {
+    "code": fields.String,
+    "path": fields.String,
+    "type": fields.String
+})
+
+updateConcept = api.model('UpdateConcept', {
     "code": fields.String,
     "description": fields.String,
     "factQuery": fields.String,
     "path": fields.String,
     "type": fields.String,
-    "definitionType": fields.String,
     "blob": fields.String,
 })
 
-deleteDerivedConcept = api.model('DeleteDerivedConcept', {
+createMLConcept = api.model('createMLConcept', {
+    "code": fields.String,
+    "description": fields.String,
     "path": fields.String,
-    "definitionType": fields.String
+    "blob": fields.String
+})
+applyMLConcept = api.model('applyMLConcept', {
+    
+    "path": fields.String,
+    "target_path": fields.String
 })
 
 createPatientSet = api.model('CreatePatientSet', {
@@ -129,7 +143,7 @@ getAggregationData = api.model('GetAggregationData', {
     "start_time": fields.String,
     "end_time": fields.String,
     "derived_type": fields.String,
-    "group_by_month": fields.boolean,
+    "group_by_month": fields.Boolean
 })
 
 app.config['APP_DIR'] = APP_DIR
@@ -160,7 +174,7 @@ def allowed_file(filename):
 def authenticate(userProject, password):
     """Decorator method for authentication"""
     if userProject.count('\\') == 1:
-        username,project = userProject.split('\\')
+        project,username = userProject.split('\\')
         if not (username and password):
             return False
         return AuthConfig.validate_session(pm_datasource,username,password,project)
@@ -180,7 +194,7 @@ def auth_error(status):
 def get_user_roles(userProject):
     etl_logger.info("userProject : ",userProject)
     if userProject.username.count('\\') == 1:
-        username,project = userProject.username.split('\\')
+        project, username = userProject.username.split('\\')
         return AuthConfig.get_roles(pm_datasource,username, project)
 
 
@@ -361,7 +375,8 @@ class GetFile(Resource):
                 else:
                     if "All operation completed !!" in fileContentObj or "Deleting data.." in fileContentObj:
                         # Success response
-                        return send_file('../../'+lp, as_attachment=True)
+                        # return send_file('../../'+lp, as_attachment=True)
+                        return send_file('/usr/src/app/'+lp, as_attachment=True)
                     else:
                         message= "Process is not completed"
                         return _sucess_response_with_validation_soft_error(message)
@@ -451,33 +466,53 @@ class PatientSetQueryMaster(Resource):
         from i2b2_cdi.patient.patient_query_master import get_patient_query_master
         return get_patient_query_master(request)
 
-@nsDerivedConcepts.route("/etl/concepts", endpoint='concepts')
+@nsConcepts.route("/etl/concepts", endpoint='concepts')
 @api.expect(projectNameHeader)
-class DerivedConcept(Resource):
+class Concept(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
-    @api.doc(description='Create Concepts', body=updateDerivedConcept, responses=responseCodes)
+    @api.doc(description='Create Concepts', body=createConcept, responses=responseCodes)
     def post(self):
         """Create Concepts"""
         from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
     
-    @api.doc(description='Get derived concepts details from project, if path is not provided, get all derived concepts else get derived concept based on path provided', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
+    @api.doc(description='Get concepts details from project, if path is not provided, get all concepts else get concept based on path provided', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
     def get(self):
         """Get Concepts"""
         from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
     
-    @api.doc(description='Delete Concepts',body=deleteDerivedConcept, params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
+    @api.doc(description='Delete Concepts', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
     def delete(self):
         """Delete Concepts"""
         from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
 
-    @api.doc(description='Update Concepts' ,params={'cpath':'coded path', 'hpath':'human path'}, body=updateDerivedConcept, responses=responseCodes)
+    @api.doc(description='Update Concepts' ,params={'cpath':'coded path', 'hpath':'human path'}, body=updateConcept, responses=responseCodes)
     def put(self):
         """Update Concepts"""
         from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
+
+@nsMLConcepts.route("/etl/ml_build_model", endpoint='ml_build_model')
+@api.expect(projectNameHeader)
+class MLConcept(Resource):
+    decorators = [auth.login_required(role='DATA_AUTHOR')]
+    @api.doc(description='Build ML Model', body=createMLConcept, responses=responseCodes)
+    def post(self):
+        """Build ML Model"""
+        from i2b2_cdi.ML.concept_API import processRequest_build_model
+        return processRequest_build_model(request)
+    
+@nsMLConcepts.route("/etl/ml_apply_model", endpoint='ml_apply_model')
+@api.expect(projectNameHeader)
+class MLConcept_(Resource):
+    decorators = [auth.login_required(role='DATA_AUTHOR')]
+    @api.doc(description='Apply ML Model', body=applyMLConcept, responses=responseCodes)
+    def post(self):
+        """Apply ML model"""
+        from i2b2_cdi.ML.ml_usecase import apply_model
+        return apply_model(request)    
 
 @nsPatientSet.route("/etl/patient-set")
 @api.expect(projectNameHeader)
@@ -490,7 +525,7 @@ class PatientSet(Resource):
         return patientSet(request)
 
 
-@nsFacts.route("/etl/compute-facts")
+# @nsFacts.route("/etl/compute-facts") #commented for swagger
 @api.expect(projectNameHeader)
 @api.doc(description='Initiate computation of facts for derived concepts from project. If path is not provided, jobs for all derived concepts will be added to derived_concept_job table which is used of for computation by Engine',params={'cpath':'coded path','hpath':'human path'}, responses=responseCodes)
 class PopulateDerivedConcepts(Resource):

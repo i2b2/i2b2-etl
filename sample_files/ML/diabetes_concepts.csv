@@ -1,0 +1,13 @@
+﻿type,path,code
+float,/Diabetes/BMI,BMI
+integer,/Diabetes/Glucose,Glucose
+integer,/Diabetes/BloodPressure,BloodPressure
+integer,/Diabetes/Insulin,Insulin
+float,/Diabetes/DiabetesPedigreeFunction,DiabetesPedigreeFunction
+integer,/Diabetes/Age,Age
+assertion,/Diabetes/positive,positive
+assertion,/Diabetes/negative,negative
+assertion,/Diabetes/target,target
+integer,/Diabetes/Pregnancies,Pregnancies
+integer,/Diabetes/Insulin,Insulin
+integer,/Diabetes/SkinThickness,SkinThickness

@@ -31,6 +31,7 @@ def appendConfigParser(parserLk):
     load_p.add('--disable-fact-validation', default=False ,action='store_true',help='Disable fact validation using concept definition.')
     load_p.add('--max-validation-error-count', default='1000000',type=str,action='store',help="max validation error count")
     load_p.add('--mrn-hash-salt',type=str,action='store',help="salt for hashing mrn",env_var='MRN_HASH_SALT')
+    load_p.add('--mrn-are-patient-numbers', default=False, action='store_true',help="MRN'S are patient numbers")
     del_p=subparser.add_parser('delete',parents=[parserLk['all_parent_p'],parserLk['crc_parent_p'],parserLk['ont_parent_p'],parserLk['pm_parent_p']],help='delete facts',default_config_files=default_config_files)      
     undo_p=subparser.add_parser('undo',parents=[parserLk['all_parent_p'],parserLk['ont_parent_p'],parserLk['crc_parent_p'],parserLk['pm_parent_p'],parserLk['upload_parent_p']],help='Undo Upload facts',default_config_files=default_config_files)
     count_p=subparser.add_parser('count',parents=[parserLk['all_parent_p'],parserLk['ont_parent_p'],parserLk['crc_parent_p'],parserLk['pm_parent_p']],help='count facts',default_config_files=default_config_files)

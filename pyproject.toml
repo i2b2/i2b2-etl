@@ -1,0 +1,23 @@
+[project]
+name = "i2b2_etl"
+version = "1.3.4"
+
+
+dynamic = ["dependencies"]
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+
+[build-system]
+requires = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=3.4","Cython"]
+build-backend = "setuptools.build_meta"
+
+
+
+#responsible for adding only .so files bt not working for .csv and .sql also no any .py added
+#no need to declare in setup.py 
+[tools.setuptools.package.find]
+where = ["src"]
+
+#[tools.Cythonize]
+#package = ["i2b2_cdi"]

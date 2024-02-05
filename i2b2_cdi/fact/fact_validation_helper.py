@@ -41,6 +41,8 @@ def validate_fact_row(row, patient_map, concept_map, config, code_type_lookup):
     else:
         if len(row['mrn'])>200:
             return 'Length of MRN >200 '
+        elif config.mrn_are_patient_numbers == True:
+            row['mrn'] = row['mrn']
         else:
             salt = config.mrn_hash_salt
             mrnSalt = salt + str(row['mrn'])
