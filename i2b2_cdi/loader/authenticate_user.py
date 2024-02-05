@@ -15,9 +15,11 @@
 import requests
 import os
 import base64
+from i2b2_cdi.common.file_util import get_package_path
 
 def get_xml(username, password):
-    with open('/usr/src/app/i2b2_cdi/loader/resources/post_i2b2.xml','r') as f:
+    xml_file_path = get_package_path('i2b2_cdi/loader/resources/post_i2b2.xml')
+    with open(xml_file_path,'r') as f:
         xml_data = f.read()
     return xml_data.format(i2b2PmServiceUrl=os.environ['I2B2_PM_SERVICE_URL'], i2b2User=username, i2b2Password=password)
 

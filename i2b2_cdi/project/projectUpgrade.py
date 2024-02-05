@@ -27,6 +27,7 @@ from i2b2_cdi.database import execSql
 from loguru import logger
 from os.path import dirname, realpath, sep, pardir
 from i2b2_cdi.config.config import Config
+from i2b2_cdi.common.file_util import get_package_path
 
 def upgradeProject(args):
     logger.debug("Upgrade project")
@@ -40,7 +41,8 @@ def upgradeProject(args):
     try:
         sql_resource_dir=dirname(realpath(__file__)) + sep + pardir + sep + pardir +sep+'i2b2_cdi/project/resources/'
         if(str(args.crc_db_type)=='pg'):
-            sql=str_from_file(sql_resource_dir+'sql/upgrade/projectUpgrade_pg.sql')
+            sql_file_path = get_package_path('i2b2_cdi/project/resources/sql/upgrade/projectUpgrade_pg.sql') 
+            sql=str_from_file(sql_file_path)
         elif(str(args.crc_db_type)=='mssql'):
             sql=str_from_file(sql_resource_dir+'sql/upgrade/projectUpgrade_sql.sql')
         ontSql,crcPmSql=sql.split('RUN ON CRC')

@@ -53,11 +53,24 @@ RUN curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-c
 RUN chmod +x /usr/local/bin/docker-compose
 
 # Installing python libraries and modules
-COPY requirements.txt requirements.txt
+
+# COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip
-RUN python3 -m pip install -r requirements.txt
+# RUN python3 -m pip install -r requirements.txt
+RUN pip install Cython
+RUN pip install build
+
+
 
 WORKDIR /usr/src/app
 COPY . .
+
+RUN python3 setup.py build_ext --inplace
+RUN python3 -m build
+RUN pip3 install dist/i2b2_etl-1.3.4-py3-none-any.whl 
+RUN pip3 install i2b2_cdi_qs_mozilla-1.3.4-py3-none-any.whl
+RUN rm -rf dist build src i2b2_cdi_qs_mozilla-1.3.4-py3-none-any.whl development
+
+
 
 CMD ["/bin/bash"]

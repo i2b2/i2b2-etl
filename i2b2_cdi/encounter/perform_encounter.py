@@ -30,6 +30,7 @@ from i2b2_cdi.encounter import encounter_mapping as EncounterMapping
 from i2b2_cdi.common.utils import *
 from i2b2_cdi.common.constants import *
 from i2b2_cdi.common.utils import total_time
+from i2b2_cdi.common.file_util import get_package_path
 
 
 def load_encounters(config,encounter_files):
@@ -104,17 +105,11 @@ def bcp_upload_encounters(bcp_file_path,config):
             batch_size=10000,
             error_file=base_dir + "/logs/error_bcp_encounters.log")
         # Create visit dimension temp table
-        create_table_path = Path('i2b2_cdi/resources/sql') / \
-            'create_visit_dimension_temp.sql'
-        
+        create_table_path = get_package_path('i2b2_cdi/resources/sql/create_visit_dimension_temp.sql') 
         # Add new columns in visit dimension
-        add_column_path = Path(
-            'i2b2_cdi/resources/sql') / 'add_columns_visit_dimension.sql'
-        
+        add_column_path = get_package_path('i2b2_cdi/resources/sql/add_columns_visit_dimension.sql')
         # Load encounters from temp to visit dimension
-        load_encounter_path = Path(
-            'i2b2_cdi/resources/sql') / 'load_visit_dimension_from_temp.sql'
-        
+        load_encounter_path = get_package_path('i2b2_cdi/resources/sql/load_visit_dimension_from_temp.sql')        
 
         if(str(config.crc_db_type)=='pg'):
             bulkUploader.execute_sql_pg(create_table_path,config)

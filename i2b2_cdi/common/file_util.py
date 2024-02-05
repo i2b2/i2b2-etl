@@ -16,6 +16,8 @@ import pandas as pd
 from glob import glob
 from pathlib import Path
 from loguru import logger
+import os
+from importlib.resources import files
 
 def getConcatCsvAsDf(dirPath,fileSuffix,delimiter=','):
     """Globs files with fileSuffix from dirPath, merges them into a single pandas DataFrame
@@ -90,6 +92,14 @@ def str_from_file(oFilePath):
         msg='Error reading from file :'+oFilePath        
         logger.error(msg,e)
         raise Exception(msg,e)
+
+def get_package_path(dirFilePath):
+    if not os.path.exists(dirFilePath):
+        package_dir = '.'.join(dirFilePath.split('/')[:-1])
+        file_name = (dirFilePath.split('/')[-1])
+        return str(files(package_dir).joinpath(file_name))
+    else:
+        return dirFilePath
     
 if __name__=='__main__':
     logger.trace()

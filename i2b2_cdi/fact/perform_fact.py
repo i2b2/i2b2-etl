@@ -34,16 +34,20 @@ from i2b2_cdi.common.utils import total_time
 def load_facts(file_list,config): 
     from Mozilla.mozilla_perform_fact import load_facts as mozilla_load_facts
     factsErrorsList = mozilla_load_facts(file_list,config) 
-    
-    #for total_num feature - executed after each fact load operation
-    from i2b2_cdi.database.cdi_database_connections import I2b2metaDataSource
-    from i2b2_cdi.database import execSql
-    ont_ds=I2b2metaDataSource(config)
-    execSql(ont_ds,"SELECT runtotalnum('observation_fact','i2b2demodata');")
-    
+
+
+
     #loading patient dimension from facts for patient set
     from i2b2_cdi.patient import load_patient_dimension_from_facts
     load_patient_dimension_from_facts(config)
+    
+    #for total_num feature - executed after each fact load operation
+    from i2b2_cdi.database.cdi_database_connections import I2b2metaDataSource,  I2b2crcDataSource
+    from i2b2_cdi.database import execSql
+
+    ont_ds=I2b2metaDataSource(config)
+    sql = "SELECT runtotalnum('observation_fact', '" + config.crc_db_name + "');"
+    execSql(ont_ds,sql)
     return factsErrorsList
 
 @total_time

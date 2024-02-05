@@ -1,9 +1,37 @@
-<!--
-Copyright (c) 2020-2021 Massachusetts General Hospital. All rights reserved. 
-This program and the accompanying materials  are made available under the terms 
-of the Mozilla Public License v. 2.0 ( http://mozilla.org/MPL/2.0/) and under 
-the terms of the Healthcare Disclaimer.
--->
+# Build docker image locally & Start i2b2-etl
+clone the i2b2-etl & Mozilla repo 
+
+git clone https://github.com/i2b2/i2b2-etl.git 
+
+git clone https://github.com/i2b2/i2b2-cdi-qs-mozilla.git
+
+## Copy Mozilla folder inside i2b2-etl repo
+cp -r  mozilla-i2b2-etl/Mozilla/  i2b2-etl/
+
+cd i2b2-etl
+
+## Build the docker image locally 
+docker build -t i2b2/i2b2-etl:local-v1 . 
+
+## Update the etl tag & start i2b2-etl container
+open i2b2-etl-docker/postgres/.env file 
+
+update i2b2-etl tag to local-v1
+
+## Remove the existing i2b2-etl docker container 
+docker rm -f i2b2-etl
+
+## Start the new i2b2-etl container 
+docker-compose up -d i2b2-etl 
+
+## To execute the test cases
+
+Start a bash shell inside the i2b2-etl container
+```shell
+$ docker exec -it i2b2-etl bash
+python -m unittest discover -s i2b2_cdi/test/
+```
+
 # i2b2-etl
 i2b2-etl provides a command line interface and api interface to import, delete concepts and facts and encounters.
 

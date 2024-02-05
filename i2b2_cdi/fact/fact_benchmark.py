@@ -31,6 +31,7 @@ from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 from pathlib import Path
 import glob
 import shutil
+from i2b2_cdi.common.file_util import get_package_path
 
 
 numberOfFacts=''
@@ -131,9 +132,7 @@ def run(num_of_concepts,num_of_facts,num_of_partions):
 
     #Partitioning observation_fact table
     if num_of_partions > 0:
-        create_partitoned_table = Path('i2b2_cdi/resources/sql') / \
-        'create_partitoned_table_observation_facts_pg.sql'
-
+        create_partitoned_table = get_package_path('i2b2_cdi/resources/sql/create_partitoned_table_observation_facts_pg.sql')
         execute_partitions(create_partitoned_table)
         logger.info('Created new partitioned observation_fact table with {} partitons'.format(num_of_partions))
 
@@ -145,9 +144,7 @@ def run(num_of_concepts,num_of_facts,num_of_partions):
 
         execute_partitions(partitions)
         
-        index_file_path = Path('i2b2_cdi/resources/sql') / \
-        'create_indexes_observation_fact_pg.sql'
-        
+        index_file_path = Path('i2b2_cdi/resources/sql/create_indexes_observation_fact_pg.sql')      
         with open(index_file_path,'w') as f:
             for line in indexes:
                 f.write(f"{line}\n")
@@ -169,7 +166,11 @@ def run(num_of_concepts,num_of_facts,num_of_partions):
 
     #Query time analysis
     if num_of_partions > 0:
-        for file in glob.glob('/usr/src/app/i2b2_cdi/resources/sql/benchmark_queries/*.sql'):
+        file_path = get_package_path('/usr/src/app/i2b2_cdi/resources/sql/benchmark_queries')
+        file_path =  file_path + '/*.sql'
+        queries = glob.glob(file_path)
+
+        for file in queries:
             arr = get_query_analysis(file,num_of_partions,num_of_facts)
             timeArr.append(arr)
         

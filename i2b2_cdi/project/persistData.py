@@ -27,7 +27,7 @@ import csv
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 from i2b2_cdi.common.file_util import str_from_file
 from loguru import logger
-
+from i2b2_cdi.common.file_util import get_package_path
 
 def getConcepts(args,type):
     """This method generates csv from sql
@@ -42,7 +42,8 @@ def getConcepts(args,type):
         if args.project_name != 'demo':
             conn1.database = args.project_name
         with conn1 as conn:
-            query = str_from_file('i2b2_cdi/project/resources/sql/backup/persist_data.sql')
+            sql_file_path = get_package_path('i2b2_cdi/project/resources/sql/backup/persist_data.sql')         
+            query = str_from_file(sql_file_path) 
             if args.project_name == 'demo':
                 query = query.replace('i2b2demodata',args.crc_db_name)
             else:

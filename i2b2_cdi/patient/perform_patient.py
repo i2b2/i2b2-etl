@@ -34,6 +34,7 @@ from i2b2_cdi.common.utils import *
 from i2b2_cdi.common.constants import *
 from loguru import logger
 from i2b2_cdi.common.utils import total_time
+from i2b2_cdi.common.file_util import get_package_path
 
 def load_patient_mapping(mrn_files,factfile=None): 
     from Mozilla.mozilla_perform_patient import load_patient_mapping as mozilla_load_patient_mapping
@@ -148,10 +149,9 @@ def bcp_upload_patient_dimension(bcp_file_path,config):
         
 
         if(str(config.crc_db_type)=='pg'):
-            create_table_path = Path('i2b2_cdi/resources/sql') / \
-            'create_patient_dimension_temp_pg.sql'
-            load_patient_path = Path('i2b2_cdi/resources/sql') / \
-            'load_patient_dimension_from_temp_pg.sql'
+            create_table_path = get_package_path('i2b2_cdi/resources/sql/create_patient_dimension_temp_pg.sql')
+            load_patient_path = get_package_path('i2b2_cdi/resources/sql/load_patient_dimension_from_temp_pg.sql')            
+
             bulkUploader.execute_sql_pg(create_table_path,config)
             bulkUploader.upload_facts_pg(config)
             bulkUploader.execute_sql_pg(load_patient_path,config)
@@ -164,7 +164,7 @@ def bcp_upload_patient_dimension(bcp_file_path,config):
             
         #     bulkUploader.upload_facts_sql(config)
         #     bulkUploader.execute_sql(load_patient_path,config)
-        logger.info('exiting bcp_upload_patient_dimension')
+        logger.debug('exiting bcp_upload_patient_dimension')
         
     except Exception as e:
         logger.error("Failed to upload patient dimensions using BCP : {}", e)
@@ -176,7 +176,11 @@ def load_patient_dimension_from_facts(config):
         from i2b2_cdi.common.file_util import str_from_file
 
         ont_ds=I2b2crcDataSource(config)
-        query = str_from_file('i2b2_cdi/resources/sql/load_patient_dimension_from_facts_pg.sql')
+
+        file_path = get_package_path('i2b2_cdi/resources/sql/load_patient_dimension_from_facts_pg.sql')
+        query = str_from_file(file_path)
+
+
         execSql(ont_ds, query)
         logger.info("loading patient_dimension from facts completed...")
     except Exception as e:
