@@ -486,7 +486,7 @@ class Concept(Resource):
         from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
     
-    @api.doc(description='Delete Concepts',body=deleteDerivedConcept, params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
+    @api.doc(description='Delete Concepts', params={'cpath':'coded path', 'hpath':'human path'}, responses=responseCodes)
     def delete(self):
         """Delete Concepts"""
         from i2b2_cdi.concept.concept_API import processRequest
