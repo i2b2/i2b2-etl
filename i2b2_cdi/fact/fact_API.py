@@ -17,7 +17,7 @@ import os, json
 import pandas as pd
 from flask import make_response, jsonify
 from i2b2_cdi.loader import _exception_response
-from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
+from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource, I2b2metaDataSource
 from i2b2_cdi.concept.utils import humanPathToCodedPath
 from i2b2_cdi.config.config import Config
 import i2b2_cdi.fact.runner as fact_runner
@@ -25,6 +25,7 @@ from i2b2_cdi.loader.app_helper import summarize_erroDf
 from datetime import datetime
 import csv
 from i2b2_cdi.config.config import Config
+from i2b2_cdi.common.utils import formatPath
 
 def processFactRequest(request):
     login_project = request.headers.get('X-Project-Name')
@@ -39,13 +40,14 @@ def processFactRequest(request):
         
         config=Config().new_config(argv=['concept','load','--crc-db-name', crc_db_name, '--ont-db-name', ont_db_name])     
         crc_ds=I2b2crcDataSource(config)
+        ont_ds=I2b2metaDataSource(config)
         if request.method == 'GET':
             response = getFact(request, crc_ds)
         if(os.environ['ENABLE_PATIENT_FACT']=='True'):
             if request.method == 'DELETE':
                 response = deleteFact(request, crc_ds)
             elif request.method == 'POST':
-                response = postFact(request, crc_ds, login_project)
+                response = postFact(request, crc_ds, ont_ds, login_project)
         elif(os.environ['ENABLE_PATIENT_FACT']=='False'):
             if request.method == 'DELETE':
                 response = deleteFact_population(request, crc_ds)
@@ -61,6 +63,7 @@ def getFact(request, crc_ds):
         if request.query_string:
             cpath = request.args.get('cpath')
             hpath = request.args.get('hpath')
+            cpath = formatPath(cpath)
             if hpath:
                 cpath = humanPathToCodedPath(crc_ds.database, hpath)   
             if (os.environ["CRC_DB_TYPE"] == 'mssql'):
@@ -75,9 +78,9 @@ def getFact(request, crc_ds):
                     query_pg = query_pg + " and ob.patient_num = 0"
 
                 df = pd.read_sql_query(query_pg,crc_ds.connection)
-        derived_list = list(df.transpose().to_dict().values())
+        fact_list = list(df.transpose().to_dict().values())
 
-    response = make_response(jsonify(derived_list))
+    response = make_response(jsonify(fact_list))
     response.status_code = 200
     return response
 
@@ -87,6 +90,7 @@ def deleteFact(request, crc_ds):
             cpath = request.args.get('cpath')
             hpath = request.args.get('hpath')
             mrn = request.args.get('mrn')
+            cpath = formatPath(cpath)
             if hpath:
                 cpath = humanPathToCodedPath(crc_ds.database, hpath)
             if (os.environ['CRC_DB_TYPE'] == 'mssql'):
@@ -97,17 +101,14 @@ def deleteFact(request, crc_ds):
                     mrnSalt = salt + str(mrn)
                     import hashlib
                     mrn=hashlib.sha512(mrnSalt.encode('utf-8')).hexdigest()
-                    
                 # mrn provided
                 if cpath is None and mrn is not None :
-                    print(mrn)
                     query = "delete from observation_fact where patient_num in (select patient_num from patient_mapping where patient_ide = %s)"
                     cursor.execute(query, (mrn,))    
 
                 # cpath provided                
                 elif cpath is not None and mrn is None: 
                     query = "delete from observation_fact where concept_cd in (select concept_cd from concept_dimension where concept_path = %s ) "
-                    print(query)
                     cursor.execute(query, (cpath,))
 
                 #cpath mrn provided
@@ -120,19 +121,20 @@ def deleteFact(request, crc_ds):
                     logger.warning("Concept Path or MRN required")
                     response.status_code = 400
                     return response
-                       
-    response = make_response("Deleted successfully")
-    response.status_code = 200
+                if cursor.rowcount > 0:
+                    response = make_response("Deleted successfully",200)
+                else:
+                    response = make_response("Concept not found",404)
     return response
 
-def postFact(request, crc_ds, login_project ):
+def postFact(request, crc_ds, ont_ds, login_project ):
     data = request.data.decode("UTF-8")
     data = json.loads(data)
     try:
         if data['concept_path'] is not None:
-            cCodeQuery = "select concept_cd from concept_dimension where concept_path = '"+data['concept_path'].replace("\\\\","\\")+"'"
+            cCodeQuery = "select concept_cd from concept_dimension where concept_path = %s"
             with crc_ds as cursor:
-                cursor.execute(cCodeQuery)
+                cursor.execute(cCodeQuery,(formatPath(data['concept_path']),))
                 cCodeResult = cursor.fetchall()
             if cCodeResult:
                 concept_cd = cCodeResult[0][0]
@@ -156,7 +158,7 @@ def postFact(request, crc_ds, login_project ):
             csvwriter = csv.writer(csvfile)  
             csvwriter.writerows(row)
         
-        config=Config().new_config(argv=['fact','load','--crc-db-name', crc_ds.database, '--ont-db-name', crc_ds.database, '--input-dir', '/usr/src/app/tmp/'+dfstring])
+        config=Config().new_config(argv=['fact','load','--crc-db-name', crc_ds.database, '--ont-db-name', ont_ds.database, '--input-dir', '/usr/src/app/tmp/'+dfstring])
         errDf = fact_runner.mod_run(config)
         if len(errDf):
             summarize_erroDf(errDf, login_project)          
@@ -176,6 +178,7 @@ def deleteFact_population(request, crc_ds):
         if request.query_string:
             cpath = request.args.get('cpath')
             hpath = request.args.get('hpath')
+            cpath = formatPath(cpath)
             if hpath:
                 cpath = humanPathToCodedPath(crc_ds.database, hpath)
             if (os.environ['CRC_DB_TYPE'] == 'mssql'):
@@ -184,30 +187,35 @@ def deleteFact_population(request, crc_ds):
                 query = "delete from observation_fact where patient_num = 0 and concept_cd = (select concept_cd from concept_dimension where concept_path = %s )"
 
             cursor.execute(query, (cpath,))    
-    response = make_response("Deleted successfully")
-    response.status_code = 200
+            if cursor.rowcount > 0:
+                response = make_response("Deleted successfully",200)
+                response.status_code = 200
+            else:
+                response = make_response("Concept not found",404)
     return response
 
 def postFact_population(request, crc_ds):
     data = request.data.decode("UTF-8")
     data = json.loads(data)
     try:
-        cCodeQuery = "select concept_cd from concept_dimension where concept_path = '"+data['concept_path'].replace("\\\\","\\")+"'"
+        cCodeQuery = "select concept_cd from concept_dimension where concept_path = %s"
         with crc_ds as cursor:
-            cursor.execute(cCodeQuery)
+            cursor.execute(cCodeQuery,(formatPath(data['concept_path']),))
             cCodeResult = cursor.fetchall()
         if cCodeResult:
             concept_cd = cCodeResult[0][0]
             blob = data['observation_blob'].replace("'", '"')
-            host = data['host_id']
-            query = "insert into observation_fact (ENCOUNTER_NUM, PATIENT_NUM, INSTANCE_NUM, MODIFIER_CD, PROVIDER_ID, CONCEPT_CD, OBSERVATION_BLOB, START_DATE, UPDATE_DATE, VALTYPE_CD, UNITS_CD, SOURCESYSTEM_CD  ) VALUES (0,0,1, '@', '@', '" + concept_cd+"', '"+blob+"', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'B', '', '"+host+"')"
+            # host = data['host_id']
+            query = "insert into observation_fact (ENCOUNTER_NUM, PATIENT_NUM, INSTANCE_NUM, MODIFIER_CD, PROVIDER_ID, CONCEPT_CD, OBSERVATION_BLOB, START_DATE, UPDATE_DATE, VALTYPE_CD, UNITS_CD, SOURCESYSTEM_CD  ) VALUES (0,0,1, '@', '@', '" + concept_cd+"', '"+blob+"', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'B', '', 'Demo')"
             with crc_ds as cursor:
                 cursor.execute(query)
-            response = make_response("Inserted fact successfully")
-            response.status_code = 200
+                if cursor.rowcount > 0:
+                    response = make_response("Inserted fact successfully",200)
+                else:
+                    response = make_response("Fact Insertion Failed",404)
         else:
             response = make_response("Concept code not found")
-            response.status_code = 500
+            response.status_code = 404
         return response
     except Exception as err:
         raise Exception("Unable to insert fact: ", err)

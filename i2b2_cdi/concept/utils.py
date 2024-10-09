@@ -14,9 +14,7 @@
 
 from i2b2_cdi.config.config import Config
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
-
 from i2b2_cdi.common.file_util import str_from_file, get_package_path
-
 import pandas as pd
 
 def humanPathToCodedPath(dbName, inputPath, code=None):
@@ -24,10 +22,8 @@ def humanPathToCodedPath(dbName, inputPath, code=None):
     conn1 = I2b2crcDataSource(config)
     dbName = conn1.database
     with conn1 as conn:
-
         file_path = get_package_path('i2b2_cdi/concept/resources/sql/get_concept_dimension.sql')
         query = str_from_file(file_path)
-
         
         dfquery = query.replace('i2b2demodata',dbName)
         lkquery=''
@@ -60,7 +56,8 @@ def humanPathToCodedPath(dbName, inputPath, code=None):
                     hpath='\\'+'\\'.join(hpathA)+'\\'
                 #replace path from main dataframe with 
                 df['hpath'].iloc[id]=hpath
-            coded_pathDf = df[df['hpath'] == "\\"+inputPath.split("\\")[-2]+"\\"][['path']]    
+            # coded_pathDf = df[df['hpath'] == "\\"+inputPath.split("\\")[-2]+"\\"] [['path']]    
+            coded_pathDf = df[df['hpath'] == inputPath] [['path']]    
         if not coded_pathDf.empty:
             coded_path = coded_pathDf.iloc[0]['path']
     return coded_path

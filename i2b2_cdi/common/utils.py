@@ -32,6 +32,7 @@ from loguru import logger
 import ntpath
 from datetime import datetime as DateTime
 from time import time
+import re 
 
 date_format = ('%Y-%m-%d', '%Y-%m-%d %H:%M:%S','%Y-%m-%d %H:%M:%S.%f', '%d/%m/%y', '%d/%m/%y %H:%M', '%d/%m/%y %H:%M:%S','%d/%m/%y %H:%M:%S.%f')
 def parse_date(date_str):
@@ -242,4 +243,34 @@ def total_time(func):
         return result
     return wrap_func
 
+def formatPath(path):
+    #single slash -- final output should be \a\b\
+    path = path.replace ('/','\\')
+    if not path.endswith('\\') and not path.endswith('%'): 
+        path = path + '\\'
+    if not path.startswith('\\') and  not path.startswith('%'): 
+        path = '\\' + path  
+    path = re.sub(r'\\+',r'\\',path)
+    return path        
+
         
+
+def getCodedPath(crc_ds,hpath):
+    try :
+        #last children is replaced with code = cpath
+        #removing the last children of hpath i.e last children is stored in name_char
+        #
+        with crc_ds as conn:
+            parts = hpath.split('\\')
+            result = "\\".join(parts[:-2]) 
+            last_part = parts[-2:]
+            result = "%"+result+"%"
+            crc_query = "select  concept_path , concept_cd from concept_dimension where name_char ilike %s"
+            conn.execute(crc_query, (last_part[0],))
+            result = conn.fetchall()  
+            path = result[0][0].split("\\")
+            cpath = "\\".join(path[:-2])  + "\\"+result[0][1] +'\\'
+            return cpath
+    except Exception as e:
+        logger.error("Coded path not found")
+   

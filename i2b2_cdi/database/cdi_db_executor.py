@@ -75,3 +75,14 @@ def getDataFrameInChunksUsingCursor(cursor,sql,params='',chunksize=10000):
     except Exception as e:
         logger.error("error in :{}",sql)
         raise Exception('pyodbc exception:',e)        
+
+def getDataFrameInChunksUsingCursor_params(cursor,sql,param1='',param2='',chunksize=10000):
+    try:
+        dfl=[]
+        for chunk in pd.read_sql_query(sql, cursor.connection, params = {'param1': param1, 'param2':param2} ,chunksize=chunksize):
+            dfl.append(chunk)
+        df = pd.concat(dfl, ignore_index=True)
+        return df
+    except Exception as e:
+        logger.error("error in :{}",sql)
+        raise Exception('pyodbc exception:',e)   
