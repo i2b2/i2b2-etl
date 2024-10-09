@@ -1,13 +1,53 @@
+Create ML Concept Payload 
+{
+  "code": "diabetes_model",
+  "path": "ml/diabetes_model",   
+  "blob" : {"positive_path": ["/Diabetes/positive/"],"negative_path": ["/Diabetes/negative/"], "time_buffer": 0 , "feature_selection_count":4},
+  "description": "Diabetes training"
+}
+
 Build Model Payload 
 {
-"code": "diabetes_test",
-"description": "Diabetes training",
-"path": "ml\\diabetes_test",   
-"blob" : "{'concept_script': 'demo', 'positive_path': ['\\Diabetes\\positive\\'],'negative_path': ['\\Diabetes\\negative\\'], 'time_buffer': 0}"
+  "input": {"path": "/ml/diabetes_model/"},
+  "jobType": "ml-build"
 }
 
 Apply Model Payload 
 {
-"path": "\\ml\\diabetes_test\\",
-"target_path": "\\Diabetes\\target\\"
+  "input": {"path": "/ml/diabetes_model/", "target_path": "/Diabetes/target/"},
+  "jobType": "ml-apply"
 }
+
+Create Patient-ML concept  Payload
+{
+  "code":"Diabetes_type2_code",
+  "path":"/Machine_Learning/Diagnosis/Diabetes_type2",
+  "description":"Diabetes training",
+  "blob":{
+     "positive_patient_set":[
+        "positive:1.1.1"
+     ],
+     "negative_patient_set":[
+        "negative:1.1.1"
+     ],
+     "data_paths":[
+        "diabetes/diabetes_ehr1","diabetes/diabetes_ehr2"
+     ],
+     "label_paths":[
+        "diabetes/label"
+     ],
+     "feature_selection_count":4,
+     "data_period_start":"1992-02-02",
+     "data_period_end":"2024-08-20",
+     "time_buffer":2
+  }
+}
+
+Job - Build Model
+{ "input": {"path": "/Machine_Learning/Diagnosis/Diabetes_type2"}, "jobType": "ml-build_ps"}
+
+Job - Apply Model
+{  "input": {"path": "/Machine_Learning/Diagnosis/Diabetes_type2",
+ "target_patient_set": ["target:1.1.1"],
+ "prediction_event_path" : ["Diabetes/label/target"],"data_period_start":"1992-02-02","data_period_end":"2024-08-20"
+},  "jobType": "ml-apply_ps"}
