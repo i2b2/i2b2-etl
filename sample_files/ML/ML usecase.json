@@ -1,27 +1,8 @@
-Create ML Concept Payload 
-{
-  "code": "diabetes_model",
-  "path": "ml/diabetes_model",   
-  "blob" : {"positive_path": ["/Diabetes/positive/"],"negative_path": ["/Diabetes/negative/"], "time_buffer": 0 , "feature_selection_count":4},
-  "description": "Diabetes training"
-}
-
-Build Model Payload 
-{
-  "input": {"path": "/ml/diabetes_model/"},
-  "jobType": "ml-build"
-}
-
-Apply Model Payload 
-{
-  "input": {"path": "/ml/diabetes_model/", "target_path": "/Diabetes/target/"},
-  "jobType": "ml-apply"
-}
-
 Create Patient-ML concept  Payload
 {
   "code":"Diabetes_type2_code",
   "path":"/Machine_Learning/Diagnosis/Diabetes_type2",
+  "type":"integer",
   "description":"Diabetes training",
   "blob":{
      "positive_patient_set":[
@@ -45,6 +26,8 @@ Create Patient-ML concept  Payload
 
 Job - Build Model
 { "input": {"path": "/Machine_Learning/Diagnosis/Diabetes_type2"}, "jobType": "ml-build_ps"}
+
+docker exec -it i2b2-etl bash -c "source /usr/src/app/.venv/bin/activate && python -m i2b2_cdi.job.jobWatcher"
 
 Job - Apply Model
 {  "input": {"path": "/Machine_Learning/Diagnosis/Diabetes_type2",

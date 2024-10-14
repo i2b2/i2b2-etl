@@ -55,7 +55,7 @@ def humanPathToCodedPath(dbName, inputPath, code=None):
                             hpathA.append(name)
                     hpath='\\'+'\\'.join(hpathA)+'\\'
                 #replace path from main dataframe with 
-                df['hpath'].iloc[id]=hpath
+                df.loc[id,'hpath'] = hpath
             # coded_pathDf = df[df['hpath'] == "\\"+inputPath.split("\\")[-2]+"\\"] [['path']]    
             coded_pathDf = df[df['hpath'] == inputPath] [['path']]    
         if not coded_pathDf.empty:
