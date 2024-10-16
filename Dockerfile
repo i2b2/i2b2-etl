@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y \
     freetds-dev \
     graphviz \
     libgraphviz-dev \
-    pkg-config 
+    pkg-config
   
 # Create a Python virtual environment and activate it
 RUN python3 -m venv /usr/src/app/.venv 
@@ -46,7 +46,6 @@ RUN . /usr/src/app/.venv/bin/activate
 # Upgrade pip and install required Python packages
 COPY requirements.txt requirements.txt
 RUN /usr/src/app/.venv/bin/pip install --upgrade  pip 
-
 RUN /usr/src/app/.venv/bin/pip install --upgrade Cython 
 RUN /usr/src/app/.venv/bin/pip install -r requirements.txt 
 COPY . .

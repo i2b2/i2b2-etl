@@ -25,7 +25,7 @@
 from loguru import logger
 from alive_progress import alive_bar, config_handler
 from Mozilla.mozilla_encounter_mapping import MozillaEncounterMapping
-config_handler.set_global(length=50, spinner='triangles2')
+config_handler.set_global(length=50, spinner='triangles')
 
 
 class EncounterMapping(MozillaEncounterMapping):
