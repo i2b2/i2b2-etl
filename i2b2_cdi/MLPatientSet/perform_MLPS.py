@@ -235,15 +235,14 @@ def buildModelPS(concept_path,ml_code,crc_ds,job_id):
             
             outcome = train[['patient_num','label']].drop_duplicates(subset =['patient_num'],keep ='first')
             if len(train) == 0:
-                updateSql = ' update job set output  =  %s  where id = %s ;'
-                cursor.execute(updateSql,(("Training data not available for provided concept paths."),job_id,))
-                return "Training data not available for provided concept paths."
+                update_error_msg("Training data not available for provided concept paths.",job_id,cursor)
+                return 
             
         train  = train.pivot_table(index='patient_num', columns=['concept_cd'],values='nval_num',aggfunc='last').reset_index()        
         train.columns.name = None            
-        train = train.replace({np.nan: None})
+        # train = train.replace({np.nan: None})
+        train = train.fillna(train.mean())
         train = train.dropna()
-
         X = train.drop(["patient_num"],axis =1)
         X = X.fillna(X.mean())
         Y = outcome["label"]  
@@ -261,11 +260,13 @@ def buildModelPS(concept_path,ml_code,crc_ds,job_id):
 
         model = LogisticRegression()
 
-        model.fit(X_train_scaled, Y_train)
-        model_score = model.score(X_test_scaled,Y_test)
-        Y_pred = model.predict(X_test_scaled)
+        # model.fit(X_train_scaled, Y_train)
+        # model_score = model.score(X_test_scaled,Y_test)
+        # Y_pred = model.predict(X_test_scaled)
 
-        # model.fit(X_train, Y_train)  # model_score = model.score(X_test,Y_test)  # Y_pred = model.predict(X_test)
+        model.fit(X_train, Y_train) 
+        model_score = model.score(X_test,Y_test)  # 
+        Y_pred = model.predict(X_test)
 
 
         accuracy = accuracy_score(Y_test, Y_pred)
@@ -456,8 +457,9 @@ def apply_modelPS(concept_path,concept_code,crc_ds, job_id):
             X_test= getDataFrameInChunksUsingCursor(sql="select * from TESTING_DATA", cursor=cursor)
             if len(X_test) == 0:
                 msg = "Testing data not available for provided concept paths."
+                update_error_msg(msg,job_id,cursor)
                 logger.error(msg)
-                        
+                return
             X_test_ = X_test.pivot_table(index='patient_num', columns='concept_cd',values='nval_num',aggfunc='first').reset_index()
             X_test_ = X_test_.fillna(X_test_.mean())
             loaded_model = LogisticRegression()
