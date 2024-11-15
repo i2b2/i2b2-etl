@@ -18,26 +18,24 @@ FROM ubuntu:latest
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 # Update the package list and install dependencies
+
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-venv 
+
 RUN python3 -m venv .venv
 RUN . .venv/bin/activate
 
 RUN apt-get update && apt-get install -y \
     python3-pip \
     curl \
-    gnupg2 \
     apt-utils \
     vim \
     postgresql-client \
-    smbclient \
     unixodbc-dev \
     freetds-dev \
-    graphviz \
-    libgraphviz-dev \
     pkg-config
-  
+RUN pip install --upgrade --break-system-packages setuptools
 # Create a Python virtual environment and activate it
 RUN python3 -m venv /usr/src/app/.venv 
 WORKDIR /usr/src/app
@@ -49,6 +47,5 @@ RUN /usr/src/app/.venv/bin/pip install --upgrade  pip
 RUN /usr/src/app/.venv/bin/pip install --upgrade Cython 
 RUN /usr/src/app/.venv/bin/pip install -r requirements.txt 
 COPY . .
- 
 # Default command
 CMD ["/bin/bash"]

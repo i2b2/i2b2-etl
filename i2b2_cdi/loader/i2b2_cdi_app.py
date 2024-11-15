@@ -54,7 +54,7 @@ authorizations = {
 
 responseCodes = {200: 'Success', 201: "Created", 401: 'Unauthorized (Please make sure username provided is correct and does not contain more than one backslash(\))',500: 'Internal Server Error'}
 
-api = Api(app, default='I2B2 API(s)', default_label='',title="I2B2 JSON API", authorizations=authorizations, security="basicAuth")
+api = Api(app, default='I2B2 API(s)', default_label='',title="I2B2 JSON API", doc='/swagger/', authorizations=authorizations, security="basicAuth")
 
 nsFacts = Namespace('Facts', description='', path ='/')
 nsPatientSet = Namespace('Patient Sets', description='', path='/')
