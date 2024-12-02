@@ -25,7 +25,7 @@ import shutil
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource, I2b2metaDataSource
 from i2b2_cdi.concept.utils import humanPathToCodedPath
 from i2b2_cdi.loader.validation_helper import validate_concept_cd,validate_path
-
+from i2b2_cdi.common.utils import formatPath
 
 def processRequest_build_model(request):
     try:
@@ -54,6 +54,7 @@ def postDerivedConcept(data, crc_db, ont_db, config, crc_ds=None,ont_ds=None):
     data = json.loads(data)
     code = data['code']
     path = data['path'] if 'path' in data else data['conceptPath']
+
     #TBD - need to improve this code, crc_ds and ont_ds should be used. We need to remove crc_db and ont_db as we can get database name from crc_ds as well from ont_ds.
     givenPath =path.split('\\')
     givenPath[len(givenPath) - 2] = code
@@ -67,10 +68,9 @@ def postDerivedConcept(data, crc_db, ont_db, config, crc_ds=None,ont_ds=None):
     path = data['path'] if 'path' in data else data['conceptPath']
     blob = data['blob'] if 'blob' in data else None
 
-    from i2b2_cdi.ML.ml_usecase import build_model
+    from i2b2_cdi.ML.ml_API import build_model
     response = build_model(blob,code,config)
     return response
-
 
 def deleteConcept(data, crc_ds, ont_ds,cpath=None):
     if type(data) is not dict:
@@ -136,14 +136,21 @@ def generate_load_csv_EE(data, crc_db, ont_db):
 
         path = data['path'] if 'path' in data else data['conceptPath']
 
-        name = path.split('\\')[-2]
+        ##### TBD ####
+        # name = path.split('\\')[-2]
+        formatted_path = formatPath(path)#.replace('\\','\\\\')
+        # if 'ml' in formatted_path.lower() :
+        #     name = formatted_path.split('\\')[-2]
+        # else:
+        #     #TBD
+        #     name = formatted_path.split('\\')[-2]
         
         description = data['description'] if 'description' in data else None
         
         unit = data['unit'] if 'unit' in data else None
         updatedOn = data['updatedOn'] if 'updatedOn' in data else None
 
-        definitionType = 'DERIVED-ML'
+        definitionType = 'ML-BUILD'
         
         now = datetime.now()
         dfstring = now.strftime("%d-%m-%Y_%H:%M:%S%f")
@@ -153,14 +160,14 @@ def generate_load_csv_EE(data, crc_db, ont_db):
         blob = data['blob'] if 'blob' in data else None
         
         response = {
-            "path": path,
+            "path": formatted_path,
             "code": code,
             "description": description,
             "blob": blob,
             "defintionType": definitionType,
         }
 
-        row = [['type','unit','path','code','description','definition_type','blob'],[concept_type,unit,path,code,description,definitionType,blob]]
+        row = [['type','unit','path','code','description','definition_type','blob'],[concept_type,unit,formatted_path,code,description,definitionType,blob]]
 
         if not os.path.exists("/usr/src/app/tmp/"+dfstring):
             os.makedirs("/usr/src/app/tmp/"+dfstring) 

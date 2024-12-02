@@ -52,9 +52,9 @@ authorizations = {
     }
 }
 
-responseCodes = {200: 'Success',401: 'Unauthorized (Please make sure username provided is correct and does not contain more than one backslash(\))',500: 'Internal Server Error'}
+responseCodes = {200: 'Success', 201: "Created", 401: 'Unauthorized (Please make sure username provided is correct and does not contain more than one backslash(\))',500: 'Internal Server Error'}
 
-api = Api(app, default='I2B2 API(s)', default_label='',title="I2B2 JSON API", authorizations=authorizations, security="basicAuth")
+api = Api(app, default='I2B2 API(s)', default_label='',title="I2B2 JSON API", doc='/swagger/', authorizations=authorizations, security="basicAuth")
 
 nsFacts = Namespace('Facts', description='', path ='/')
 nsPatientSet = Namespace('Patient Sets', description='', path='/')
@@ -68,7 +68,7 @@ api.add_namespace(nsConcepts)
 api.add_namespace(nsMLConcepts)
 # api.add_namespace(nsPatientSet)
 api.add_namespace(nsFacts)
-# api.add_namespace(nsJobStatus)
+api.add_namespace(nsJobStatus)
 api.add_namespace(nsOther)
 
 
@@ -87,8 +87,7 @@ updateConcept = api.model('UpdateConcept', {
     "factQuery": fields.String,
     "path": fields.String,
     "type": fields.String,
-
-    "blob": fields.String,
+    "blob": fields.String
 })
 
 createMLConcept = api.model('createMLConcept', {
@@ -101,7 +100,6 @@ applyMLConcept = api.model('applyMLConcept', {
     
     "path": fields.String,
     "target_path": fields.String
-
 })
 
 createPatientSet = api.model('CreatePatientSet', {
@@ -113,6 +111,17 @@ createPatientSet = api.model('CreatePatientSet', {
     "definitionType": fields.String
 })
 
+createJob = api.model('createJob', {
+    "jobType": fields.String,
+    "input": fields.Raw
+})
+
+updateJob = api.model('updateJob', {
+    "jobId":fields.Integer,
+    "pre": fields.String,
+    "post": fields.String
+})
+
 
 if os.environ['ENABLE_PATIENT_FACT'] == 'True':
     get_description= "Get patient level facts" 
@@ -121,7 +130,6 @@ if os.environ['ENABLE_PATIENT_FACT'] == 'True':
     delete_params={'cpath':'coded path', 'hpath':'human path', 'mrn':'Medical record number'}
     post_description= 'Create patient level facts' 
     postBody  = api.model('FactBody', {
-
     "concept_path": fields.String,
     "code": fields.String,
     "mrn": fields.String,
@@ -136,8 +144,7 @@ else:
     post_description= 'Create facts (Where pt_num is zero)' 
     postBody = api.model('FactBody', {
         "concept_path": fields.String,
-        "observation_blob": fields.String,
-        "host_id": fields.String,
+        "observation_blob": fields.String
     })
 
 getAggregationData = api.model('GetAggregationData', {
@@ -147,7 +154,6 @@ getAggregationData = api.model('GetAggregationData', {
     "end_time": fields.String,
     "derived_type": fields.String,
     "group_by_month": fields.Boolean
-
 })
 
 app.config['APP_DIR'] = APP_DIR
@@ -492,7 +498,7 @@ class Concept(Resource):
         from i2b2_cdi.concept.concept_API import processRequest
         return processRequest(request)
 
-    @api.doc(description='Update Concepts' ,params={'cpath':'coded path', 'hpath':'human path'}, body=updateConcept, responses=responseCodes)
+    @api.doc(description='Update Concepts' ,params={'cpath':'coded path', 'hpath':'human path', 'blob':'blob'}, responses=responseCodes)
     def put(self):
         """Update Concepts"""
         from i2b2_cdi.concept.concept_API import processRequest
@@ -515,8 +521,35 @@ class MLConcept_(Resource):
     @api.doc(description='Apply ML Model', body=applyMLConcept, responses=responseCodes)
     def post(self):
         """Apply ML model"""
-        from i2b2_cdi.ML.ml_usecase import apply_model
+        from i2b2_cdi.ML.ml_API import apply_model
         return apply_model(request)    
+
+@nsJobStatus.route("/etl/job", endpoint='Jobs')
+@api.expect(projectNameHeader)
+class jobs(Resource):
+    decorators = [auth.login_required(role='DATA_AUTHOR')]
+    @api.doc(description='''**Create New Job**\n\n**For ML Build Model:** Input the job type as "ml-build." \n**For ML Apply Model:** Input the job type as "mlapply."\n\n{ "input": {"path": "/ml/diabetes_model/"}, "jobType": "ml-build"}''', body = createJob, responses=responseCodes)
+    def post(self):
+        """Create new Job"""
+        from i2b2_cdi.job.jobs import processRequestJob
+        return processRequestJob(request)
+    
+    decorators = [auth.login_required(role='DATA_AUTHOR')]
+    @api.doc(description='Get Job Details ', params={'jobId':'Job ID', } , responses=responseCodes)
+    def get(self):
+        """Get Job Details"""
+        from i2b2_cdi.job.jobs import processRequestJob
+        return processRequestJob(request) 
+
+@nsJobStatus.route("/etl/update_job", endpoint='update_job')
+@api.expect(projectNameHeader)
+class update_job(Resource):
+    decorators = [auth.login_required(role='DATA_AUTHOR')]
+    @api.doc(description='**Update the job status to "post" if job current status is "Pre"**.\n{  "jobId": 1,  "pre": “COMPLETED",  "post": “PENDING"}', body = updateJob, responses=responseCodes)
+    def post(self):
+        """Update Job Status"""
+        from i2b2_cdi.job.jobs import update_job_status
+        return update_job_status(request)
 
 @nsPatientSet.route("/etl/patient-set")
 @api.expect(projectNameHeader)
@@ -531,7 +564,7 @@ class PatientSet(Resource):
 
 # @nsFacts.route("/etl/compute-facts") #commented for swagger
 @api.expect(projectNameHeader)
-@api.doc(description='Initiate computation of facts for derived concepts from project. If path is not provided, jobs for all derived concepts will be added to derived_concept_job table which is used of for computation by Engine',params={'cpath':'coded path','hpath':'human path'}, responses=responseCodes)
+@api.doc(description='Initiate computation of facts for derived concepts from project. If path is not provided, jobs for all derived concepts will be added to job table which is used of for computation by Engine',params={'cpath':'coded path','hpath':'human path'}, responses=responseCodes)
 class PopulateDerivedConcepts(Resource):
     decorators = [auth.login_required(role='DATA_AUTHOR')]
     def post(self):
@@ -540,7 +573,7 @@ class PopulateDerivedConcepts(Resource):
         return processComputeRequest(request=request, path=request.args.get('cpath'))
 
 
-@nsJobStatus.route("/etl/allDerivedJobsStatus")
+# @nsJobStatus.route("/etl/allDerivedJobsStatus") # not available for OSR
 @api.expect(projectNameHeader)
 @api.doc(description='Get All Derived Jobs Status', responses=responseCodes)
 class AllDerivedJobsStatus(Resource):
@@ -578,7 +611,7 @@ class GetFact(Resource):
         # query = "insert into observation_fact (ENCOUNTER_NUM, PATIENT_NUM, INSTANCE_NUM, MODIFIER_CD, PROVIDER_ID, CONCEPT_CD, OBSERVATION_BLOB, START_DATE, UPDATE_DATE, VALTYPE_CD, UNITS_CD, SOURCESYSTEM_CD  ) VALUES\
         # (0,0,1, '@', '@', '" + concept_cd+"', '"+blob+"', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'B', '', 'DEMO')"
 
-@nsJobStatus.route("/etl/derivedJob")
+#@nsJobStatus.route("/etl/derivedJob") # not available for OSR
 @api.doc(description='Get derived-job', params={'job_host': 'Node address'}, responses=responseCodes)
 class derivedConceptJob(Resource):
     # decorators = [auth.login_required(role='DATA_AUTHOR')]

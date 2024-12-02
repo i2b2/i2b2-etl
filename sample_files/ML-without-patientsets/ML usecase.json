@@ -1,0 +1,22 @@
+Create ML Concept Payload 
+{
+  "code": "diabetes_model",
+  "path": "ml/diabetes_model",   
+  "blob" : {"positive_path": ["/Diabetes/positive/"],"negative_path": ["/Diabetes/negative/"], "time_buffer": 0 , "feature_selection_count":4},
+  "description": "Diabetes training"
+}
+
+docker exec -it i2b2-etl bash -c "source /usr/src/app/.venv/bin/activate && python -m i2b2_cdi.job.jobWatcher"
+
+Build Model Payload 
+{
+  "input": {"path": "/ml/diabetes_model/"},
+  "jobType": "ml-build"
+}
+
+Apply Model Payload 
+{
+  "input": {"path": "/ml/diabetes_model/", "target_path": "/Diabetes/target/"},
+  "jobType": "ml-apply"
+}
+

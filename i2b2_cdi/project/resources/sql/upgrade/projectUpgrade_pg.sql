@@ -149,17 +149,20 @@ DO NOTHING;
 --CREATE TABLE  if not exists (SELECT * FROM sys.objects 
 --WHERE object_id = OBJECT_ID(N'derived_concept_job') AND type in (N'U'))
 --BEGIN
-CREATE TABLE  if not exists i2b2demodata.derived_concept_job(
+
+Drop TABLE IF EXISTS i2b2demodata.derived_concept_job;
+
+CREATE TABLE  if not exists i2b2demodata.job(
        id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
        project_name varchar(100) NULL,
-       concept_path varchar (700) NULL,
+       input text NULL,
+       output text NULL,
        error_stack text,
-       derived_concept_script text NOT NULL,
        status varchar(20) NOT NULL,
        started_on timestamp without time zone ,
        completed_on timestamp without time zone ,
        priority int,
-       definition_type varchar(20),
+       job_type varchar(20),
   CONSTRAINT PK_DERIVED_CONCEPT_JOB PRIMARY KEY 
   (
        id
@@ -167,24 +170,24 @@ CREATE TABLE  if not exists i2b2demodata.derived_concept_job(
   );
 --Add to change the column name hierarchy_level to priority
 
-DO
-$$
-DECLARE
-   _tbl         regclass := 'i2b2demodata.derived_concept_job';      -- not case sensitive unless double-quoted
-   _colname     name     := 'hierarchy_level';       -- exact, case sensitive, no double-quoting
-   _new_colname text     := 'priority';  -- exact, case sensitive, no double-quoting
-BEGIN
-   IF EXISTS (SELECT FROM pg_attribute
-              WHERE  attrelid = _tbl
-              AND    attname  = _colname
-              AND    attnum > 0
-              AND    NOT attisdropped) THEN
-      EXECUTE format('ALTER TABLE %s RENAME COLUMN %I TO %I', _tbl, _colname, _new_colname);
-   ELSE
-      RAISE NOTICE 'Column % of table % not found!', quote_ident(_colname), _tbl;
-   END IF;
-END
-$$;
+-- DO
+-- $$
+-- DECLARE
+--    _tbl         regclass := 'i2b2demodata.derived_concept_job';      -- not case sensitive unless double-quoted
+--    _colname     name     := 'hierarchy_level';       -- exact, case sensitive, no double-quoting
+--    _new_colname text     := 'priority';  -- exact, case sensitive, no double-quoting
+-- BEGIN
+--    IF EXISTS (SELECT FROM pg_attribute
+--               WHERE  attrelid = _tbl
+--               AND    attname  = _colname
+--               AND    attnum > 0
+--               AND    NOT attisdropped) THEN
+--       EXECUTE format('ALTER TABLE %s RENAME COLUMN %I TO %I', _tbl, _colname, _new_colname);
+--    ELSE
+--       RAISE NOTICE 'Column % of table % not found!', quote_ident(_colname), _tbl;
+--    END IF;
+-- END
+-- $$;
 
-ALTER TABLE derived_concept_job
+ALTER TABLE job
 ADD COLUMN IF NOT EXISTS  job_host VARCHAR(100) NULL;

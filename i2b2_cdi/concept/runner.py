@@ -47,7 +47,7 @@ def mod_run(options):
                 logger.debug('..running concept count')
                 print(get_concept_count())
             elif options.sub_command=='human-path':
-                from i2b2_cdi.derived_fact.populateDerivedConceptJob import humanPathAndCodedPathMap
+                from i2b2_cdi.job.populateDerivedConceptJob import humanPathAndCodedPathMap
                 logger.debug('..running concept human-path')
                 humanPathAndCodedPathMap(options)
 

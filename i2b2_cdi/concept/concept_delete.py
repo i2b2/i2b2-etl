@@ -40,7 +40,7 @@ def delete_concepts_i2b2_demodata(config):
     """Delete the concepts from i2b2 instance"""
     try:
         logger.debug(
-            'Deleting data from i2b2 concept_dimension and derived_concept_job')
+            'Deleting data from i2b2 concept_dimension and job')
         queries = [
             "delete from concept_dimension","delete from provider_dimension"]
 
@@ -48,12 +48,12 @@ def delete_concepts_i2b2_demodata(config):
             # queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_definition') BEGIN delete from derived_concept_definition END")
             # queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_dependency') BEGIN delete from derived_concept_dependency END")
             # queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_job_details') BEGIN delete from derived_concept_job_details END")
-            queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'derived_concept_job') BEGIN delete from derived_concept_job END")
+            queries.append("IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'job') BEGIN delete from job END")
         elif(config.crc_db_type=='pg'):
             # queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_definition' and schemaname= '" +config.crc_db_name+ "') then delete from derived_concept_definition; end if; end $$ ")
             # queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_dependency' and schemaname= '" +config.crc_db_name+ "') then delete from derived_concept_dependency; end if; end $$ ")            
             # queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_job_details' and schemaname= '" +config.crc_db_name+ "') then delete from derived_concept_job_details; end if; end $$ ")
-            queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='derived_concept_job' and schemaname= '" +config.crc_db_name+ "') then delete from derived_concept_job; end if; end $$ ")
+            queries.append(" do $$ DECLARE BEGIN if EXISTS (SELECT 1 from pg_tables where tablename='job' and schemaname= '" +config.crc_db_name+ "') then delete from job; end if; end $$ ")
         with I2b2crcDataSource(config) as cursor:
             delete(cursor, queries)
     except Exception as e:

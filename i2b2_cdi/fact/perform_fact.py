@@ -36,7 +36,6 @@ def load_facts(file_list,config):
     factsErrorsList = mozilla_load_facts(file_list,config) 
 
 
-
     #loading patient dimension from facts for patient set
     from i2b2_cdi.patient import load_patient_dimension_from_facts
     load_patient_dimension_from_facts(config)
@@ -48,6 +47,7 @@ def load_facts(file_list,config):
     ont_ds=I2b2metaDataSource(config)
     sql = "SELECT runtotalnum('observation_fact', '" + config.crc_db_name + "');"
     execSql(ont_ds,sql)
+
     return factsErrorsList
 
 @total_time
