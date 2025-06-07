@@ -65,7 +65,6 @@ services:
         tty: true
         
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
             - ./importdata:/usr/src/app/importdata
         ports:
             - 5000:5000
@@ -130,7 +129,6 @@ services:
         tty: true
         
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
             - ./importdata:/usr/src/app/importdata
         networks:
             - i2b2-net
