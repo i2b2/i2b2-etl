@@ -10,10 +10,10 @@ import shutil
 def llm_apply(conceptPath,conceptCode,crc_ds,jobId):
     logger.info('Running job LLM-llm_apply {} for conceptPath:{}',jobId,conceptPath)
     arr=[]
-    for patient_num in ['12345']:
+    for patient_num in ['12345','34566']:
         arr.append([patient_num,conceptCode,'1970-01-01 00:00:00',''])
     df=pd.DataFrame(arr,columns=['mrn','code','start-date','value'])
-    #Engine.load_facts(df)
+    
     return df
 
 class llmEngine(BaseEngine):
