@@ -639,4 +639,4 @@ if __name__ == '__main__':
     # Create PM datasource
     config = Config().new_config(argv=['project','add'])
     pm_datasource = I2b2pmDataSource(config)
-    app.run(debug=False, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0')

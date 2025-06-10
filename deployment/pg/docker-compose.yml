@@ -66,6 +66,7 @@ services:
         
         volumes:
             - ./importdata:/usr/src/app/importdata
+            - ../../i2b2_cdi:/usr/src/app/i2b2_cdi
         ports:
             - 5000:5000
         networks:

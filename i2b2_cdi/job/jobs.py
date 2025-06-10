@@ -8,7 +8,7 @@ import json
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource, I2b2metaDataSource
 from i2b2_cdi.common.utils import  formatPath, getCodedPath
 from i2b2_cdi.loader.validation_helper import validate_concept_cd,validate_path
-from i2b2_cdi.concept.utils import humanPathToCodedPath
+from i2b2_cdi.concept.utils import humanPathToCodedPath1
 import time 
 import pandas as pd 
 
@@ -48,7 +48,7 @@ def addJob(requestBody,  crc_db_name, crc_ds):
     job_type = requestBody['jobType']
     path = formatPath(input['path'])
 
-    input['path'] = humanPathToCodedPath(crc_db_name, path)
+    input['path'] = humanPathToCodedPath1(crc_db_name, path)
     
     if job_type.lower() == "ml-apply" :
         target_path = formatPath(input['target_path'])

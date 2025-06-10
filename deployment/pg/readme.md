@@ -15,7 +15,8 @@ create concept
 
 {
   "input": {
-    "path": "/LLM/LLM1"
+    "path": "/LLM/LLM1",
+    "function": "llm_apply"
   },
-  "jobType": "llm-llm_apply"
+  "jobType": "llm"
 }
