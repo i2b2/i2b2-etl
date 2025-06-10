@@ -26,7 +26,7 @@ def initJob():
     logger.info('Listening to job table for picking jobs of all types excluding : {0}.\nPress Ctrl+{1} to exit'.format(typeList if typeList is not None else checklist,'Break' if os.name == 'nt' else 'C'))
 
 def computeJob(jobExecutor):
-    jobList = jobExecutor.watchJob()
+    jobList = jobExecutor.jobList()
     if jobList:
         for row in jobList:
             if(os.environ['CRC_DB_TYPE']=='pg'):
@@ -92,9 +92,9 @@ def computeJob(jobExecutor):
                     except Exception as error:
                         error_msg = str(error).replace('\'','"')
                         if(os.environ['CRC_DB_TYPE']=='pg'):
-                            logger.error('ERROR in {} Job for job_id = {} for project = {} : {}'.format(jobType, jobId, projectName, error_msg))
+                            logger.exception('ERROR in {} Job for job_id = {} for project = {} : {}'.format(jobType, jobId, projectName, error_msg))
                         if(os.environ['CRC_DB_TYPE']=='mssql'):
-                            logger.error('ERROR in {} Job for job_id = {} for project = {} : {}'.format(row.definition_type, jobId, projectName, error_msg))
+                            logger.exception('ERROR in {} Job for job_id = {} for project = {} : {}'.format(row.definition_type, jobId, projectName, error_msg))
                         jobExecutor.update_status('PROCESSING', 'ERROR', jobId, error_msg)
 
 if __name__ == '__main__':

@@ -23,7 +23,7 @@ class jobOrchestrator:
     if exclude_job_type:
       self.fetchJobQuery += "and job_type is not null and job_type not in "+(str(tuple(exclude_job_type)) if len(exclude_job_type)!=1 else "('"+exclude_job_type[0]+"')")
 
-  def watchJob(self):
+  def jobList(self):
     try:
         with self.crc_ds as cursor:
             cursor.execute(self.fetchJobQuery)

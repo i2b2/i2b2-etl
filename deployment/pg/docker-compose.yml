@@ -78,10 +78,10 @@ services:
         depends_on:
             - i2b2c-web
 
-  i2b2-ml:
+  i2b2-llm:
         image: i2b2/i2b2-etl:${I2B2_ETL_TAG}
-        container_name: i2b2-ml
-        restart: unless-stopped
+        container_name: i2b2-llm
+        #restart: unless-stopped
         environment:
           - CRC_DB_HOST=${I2B2_DS_CRC_IP}
           - CRC_DB_PORT=${I2B2_DS_CRC_PORT}
@@ -130,10 +130,13 @@ services:
         
         volumes:
             - ./importdata:/usr/src/app/importdata
+            - ../../i2b2_cdi:/usr/src/app/i2b2_cdi
+          #  - ../../.venv:/usr/src/app/.venv
         networks:
             - i2b2-net
-        command: bash -c "source /usr/src/app/.venv/bin/activate  && sleep ${I2B2_DB_TIMER} &&
-            python -m i2b2_cdi.job.jobWatcher "
+        command: bash -c "source /usr/src/app/.venv/bin/activate  && 
+            cd /usr/src/app/ && which python && 
+            /usr/src/app/.venv/bin/python -m i2b2_cdi.job.jobWatcher "
         depends_on:
             - i2b2-etl          
 
@@ -202,6 +205,8 @@ services:
       - i2b2-pg-vol:/var/lib/postgresql/data
     depends_on:
       - i2b2-pg-vol-loader
+    ports:
+      - "5432:5432"
   
 
   gitlab:
