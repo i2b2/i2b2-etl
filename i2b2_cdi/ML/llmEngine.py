@@ -3,25 +3,30 @@ from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 from i2b2_cdi.config.config import Config
 from loguru import logger
 from i2b2_cdi.job.BaseEngine import BaseEngine
+from pathlib import Path
+import pandas as pd
+import shutil
 
 def llm_apply(conceptPath,conceptCode,crc_ds,jobId):
-    print('Running job LLM-llm_apply {} for conceptPath:{}',jobId,conceptPath)
-    '''outdir=Path('/usr/src/app/tmp/LLM/output')
+    logger.info('Running job LLM-llm_apply {} for conceptPath:{}',jobId,conceptPath)
+    outDir=Path('/usr/src/app/tmp/LLM/output')
     outDir.mkdir(parents=True, exist_ok=True)
+    fpath=str(outDir)+'/llm_{}_facts.csv'.format(conceptCode)
+    factLoad = ['fact','load','-i','/usr/src/app/tmp/LLM/output']
 
     arr = []
-    for index,patient_num in ['12345']:
-        if Y_pred[index]:
-            arr.append([patient_num,conceptCode,'1970-01-01 00:00:00',''])
+    for patient_num in ['12345']:
+        arr.append([patient_num,conceptCode,'1970-01-01 00:00:00',''])
         
-    pd.DataFrame(arr,columns=['mrn','code','start-date','value']).to_csv(outdir+'/llm_{}_facts.csv'.format(code),index=False)
+    pd.DataFrame(arr,columns=['mrn','code','start-date','value']).to_csv(fpath,index=False)
 
     import i2b2_cdi.fact.runner as fact_runner
     logger.debug(factLoad)
 
     config = Config().new_config(argv=factLoad)
     fact_runner.mod_run(config)
-    '''
+    Path(fpath).unlink()
+    
     return
 
 class llmEngine(BaseEngine):
