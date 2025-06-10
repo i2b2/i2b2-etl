@@ -61,6 +61,7 @@ class jobOrchestrator:
       # return True
 
   def delete_facts(self, project_name, concept_cd):
+    
 
     try:
         main_db = self.crc_ds.database
@@ -80,6 +81,7 @@ class jobOrchestrator:
         pass
     finally:
       self.crc_ds.database = main_db
+      logger.info('deleted facts for {} in project {}'.format(concept_cd,project_name))
 
   def get_engine_modules(self):
       p=str(pathlib.Path(__file__).parent.parent)

@@ -14,7 +14,7 @@ class BaseEngine(ABC):
 
 
 
-    def load_facts(self,df):
+    def send_facts(self,df):
         class_name = self.__class__.__name__
         outDir='/usr/src/app/tmp/{}/output'.format(class_name)
         Path(outDir).mkdir(parents=True, exist_ok=True)
