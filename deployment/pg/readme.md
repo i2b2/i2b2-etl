@@ -10,7 +10,7 @@ sudo docker compose up -d i2b2-llm
 sudo docker logs -f i2b2-llm
 
 see http://<ip>>/webclient/
-login: demo\demo:Etl@2021
+login: demo:Etl@2021
 see http://<ip>>:5000/swagger/
 login: demo\demo:Etl@2021
 
