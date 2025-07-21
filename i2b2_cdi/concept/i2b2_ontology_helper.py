@@ -308,6 +308,7 @@ def get_concept_ontology_from_i2b2metadata(config,conceptDef,concept_map_df=None
     arr=[]
     count=0
     onetenth=round(len(df)/10)
+    
     for idx,r in df.iterrows():
         count+=1
         if onetenth>0 and (count % onetenth ==0):
@@ -400,13 +401,14 @@ def get_concept_ontology_from_i2b2metadata(config,conceptDef,concept_map_df=None
         if count%1000==0:
             logger.trace('completed {} of {}', count, len(df))
     df1=pd.DataFrame(arr,columns=["path","code","concept_type","concept_name","short_path","code_path","is_leaf","is_root","description","concept_unit","concept_blob","definition_type",'line_num','input_file'])
-    
+    #print('############\n',df1)
     df1,errDf=filterErrors(df1)
     #logger.trace('ERROR:{}',errDf)
     
-    df2=addMapToConceptDef(df1,concept_map_df)
-    df2=processLeafRoot(df2,existing_ont)
+    df2=df1#addMapToConceptDef(df1,concept_map_df)
+    #df2=df1#processLeafRoot(df2,existing_ont)
     #filter by existing ontology
+    #print('>>>>>>>>>\n',df2)
     arr=[]
     for idx,r in df2.iterrows():
         _path=r['code_path']

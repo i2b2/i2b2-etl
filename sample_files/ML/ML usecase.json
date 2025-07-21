@@ -17,20 +17,28 @@ Create Patient-ML concept  Payload
       "label_paths":[
          "diabetes/label"
       ],
-      "feature_selection_count":4,
       "data_period_start":"1992-02-02",
-      "data_period_end":"2024-08-20",
-      "time_buffer":2
+      "data_period_end":"2024-08-20"
    }
  }
 
 Job - Build Model
-{ "input": {"path": "/ML/Diagnosis/DM2"}, "jobType": "ml-build_ps"}
+{ "input": {"path": "/ML/Diagnosis/DM2"}, "jobType": "ml"}
 
 docker exec -it i2b2-etl bash -c "source /usr/src/app/.venv/bin/activate && python -m i2b2_cdi.job.jobWatcher"
 
 Job - Apply Model
-{  "input": {"path": "/ML/Diagnosis/DM2",
- "target_patient_set": ["target_dm2"],
- "prediction_event_path" : ["Diabetes/label/target"],"data_period_start":"1992-02-02","data_period_end":"2024-08-20"
-},  "jobType": "ml-apply_ps"}
+{
+   "input": {
+      "path": "/ML/Diagnosis/DM2",
+      "target_patient_set": [
+         "target_dm3"
+      ],
+      "prediction_event_paths": [
+         "Diabetes/label/target"
+      ],
+      "data_period_start": "1992-02-02",
+      "data_period_end": "2024-08-20"
+   },
+   "jobType": "ml"
+}

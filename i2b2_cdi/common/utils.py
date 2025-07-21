@@ -274,3 +274,44 @@ def getCodedPath(crc_ds,hpath):
     except Exception as e:
         logger.error("Coded path not found")
    
+import importlib.resources
+import tempfile
+import shutil
+
+def get_resource_absolute_path(package: str, resource_name: str):
+    # Use as_file context manager to handle zip or disk transparently
+    with importlib.resources.as_file(
+        importlib.resources.files(package).joinpath(resource_name)
+    ) as extracted_path:
+        return str(extracted_path.resolve())
+
+
+from pathlib import Path
+import importlib.util
+
+def get_path_relative_to_package_root(package: str, relative_path_outside: str):
+    """
+    Returns an absolute Path to a file relative to the *package's root directory*,
+    even if the file is outside the package folder.
+    
+    Example:
+        get_path_relative_to_package_root('my_package', '../other_data/something.csv')
+    """
+    # Find the spec of the package
+    spec = importlib.util.find_spec(package)
+    if spec is None or spec.origin is None:
+        raise ImportError(f"Could not find package {package}")
+    
+    # Get the filesystem path to the package __init__.py or module
+    package_path = Path(spec.origin).parent.resolve()
+    
+    # Combine with the relative path
+    full_path = (package_path / relative_path_outside).resolve()
+    
+    return full_path
+
+def clean_json_string(s):
+    s = s.strip()
+    if s.startswith("{") and "'" in s:
+        s = s.replace("'", '"')
+    return s
