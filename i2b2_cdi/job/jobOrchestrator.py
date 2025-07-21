@@ -23,7 +23,7 @@ class jobOrchestrator:
     if exclude_job_type:
       self.fetchJobQuery += "and job_type is not null and job_type not in "+(str(tuple(exclude_job_type)) if len(exclude_job_type)!=1 else "('"+exclude_job_type[0]+"')")
 
-  def watchJob(self):
+  def jobList(self):
     try:
         with self.crc_ds as cursor:
             cursor.execute(self.fetchJobQuery)
@@ -61,6 +61,7 @@ class jobOrchestrator:
       # return True
 
   def delete_facts(self, project_name, concept_cd):
+    
 
     try:
         main_db = self.crc_ds.database
@@ -80,6 +81,7 @@ class jobOrchestrator:
         pass
     finally:
       self.crc_ds.database = main_db
+      logger.info('deleted facts for {} in project {}'.format(concept_cd,project_name))
 
   def get_engine_modules(self):
       p=str(pathlib.Path(__file__).parent.parent)

@@ -15,49 +15,57 @@
 from i2b2_cdi.config.config import Config
 from i2b2_cdi.database.cdi_database_connections import I2b2crcDataSource
 from i2b2_cdi.common.file_util import str_from_file, get_package_path
+from loguru import logger 
 import pandas as pd
 
-def humanPathToCodedPath(dbName, inputPath, code=None):
-    config=Config().new_config(argv=['concept','load','--crc-db-name', dbName])
+def humanPathToCodedPath(dbName, inputPath):
+    from functools import lru_cache
+    config = Config().new_config(argv=['concept', 'load', '--crc-db-name', dbName])
     conn1 = I2b2crcDataSource(config)
     dbName = conn1.database
-    with conn1 as conn:
-        file_path = get_package_path('i2b2_cdi/concept/resources/sql/get_concept_dimension.sql')
-        query = str_from_file(file_path)
-        
-        dfquery = query.replace('i2b2demodata',dbName)
-        lkquery=''
-        if(config.crc_db_type=='mssql'):
-            lkquery = "select distinct concept_path, name_char from {}.dbo.concept_dimension".format(dbName)
-        elif(config.crc_db_type=='pg'):
-            lkquery = "select distinct concept_path, name_char from {}.concept_dimension ".format(dbName)
-        if code:
-            dfquery += " where concept_cd like '%"+code[:5]+"%'"
-            lkquery +=  " where concept_cd like '%"+code[:5]+"%'"
-        
-        df = pd.read_sql_query(dfquery,conn.connection) 
 
-        lk = pd.read_sql_query(lkquery,conn.connection) 
-        df['hpath']=''
-        coded_path=None
-        #add hpath from path
-        coded_pathDf=[]
-        if not df.empty and not lk.empty:
-            for id,r in df.iterrows():
-                hpathA=[]
-                store_path=[]
-                for code in r['path'].split('\\'):
-                    if code is not '':
-                        store_path.append(code)
-                        modified_code = '\\'+'\\'.join(store_path)+'\\'
-                        if modified_code in set(lk['concept_path']):
-                            name=list(lk[lk['concept_path']==modified_code]['name_char'])[0]
-                            hpathA.append(name)
-                    hpath='\\'+'\\'.join(hpathA)+'\\'
-                #replace path from main dataframe with 
-                df.loc[id,'hpath'] = hpath
-            # coded_pathDf = df[df['hpath'] == "\\"+inputPath.split("\\")[-2]+"\\"] [['path']]    
-            coded_pathDf = df[df['hpath'] == inputPath] [['path']]    
-        if not coded_pathDf.empty:
-            coded_path = coded_pathDf.iloc[0]['path']
-    return coded_path
+    hnames=inputPath.split('\\')
+
+    with conn1 as conn:
+        # Load SQL file and prepare query
+        file_path = get_package_path('i2b2_cdi/concept/resources/sql/get_concept_dimension.sql')
+        query = str_from_file(file_path).replace('i2b2demodata', dbName)
+
+        # Add code filter if present
+       
+        filter_clause = " where name_char in ('{}')".format("','".join(hnames[1:-1]))
+
+        if config.crc_db_type == 'mssql':
+            lkquery = f"select distinct concept_path, name_char from {dbName}.dbo.concept_dimension" + filter_clause
+        elif config.crc_db_type == 'pg':
+            lkquery = f"select distinct concept_path, name_char from {dbName}.concept_dimension" + filter_clause
+        else:
+            raise ValueError("Unsupported DB type")
+
+        # Query concept dimensions and lookup table
+        df = pd.read_sql_query(query, conn.connection)
+        lk = pd.read_sql_query(lkquery, conn.connection)
+
+        if df.empty or lk.empty:
+            return None
+
+        logger.info('got concept dim')
+        # Create a quick lookup dictionary for concept_path -> name_char
+        path_to_name = dict(zip(lk['concept_path'], lk['name_char']))
+        logger.info('create path to name map')
+
+        # Build full human-readable paths for each concept
+        def build_hpath(path):
+            segments = path.strip("\\").split("\\")
+            parts = []
+            for i in range(1, len(segments)+1):
+                sub_path = "\\" + "\\".join(segments[:i]) + "\\"
+                if sub_path in path_to_name:
+                    parts.append(path_to_name[sub_path])
+            return "\\" + "\\".join(parts) + "\\" if parts else ""
+
+        df['hpath'] = df['path'].apply(build_hpath)
+
+        # Find the coded path matching the human-readable path
+        match = df[df['hpath'] == inputPath]
+        return match.iloc[0]['path'] if not match.empty else None

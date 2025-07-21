@@ -49,6 +49,7 @@ def addJob(requestBody,  crc_db_name, crc_ds):
     path = formatPath(input['path'])
 
     input['path'] = humanPathToCodedPath(crc_db_name, path)
+    
     if job_type.lower() == "ml-apply" :
         target_path = formatPath(input['target_path'])
         input['target_path'] = humanPathToCodedPath(crc_db_name, target_path)

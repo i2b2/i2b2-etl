@@ -1,0 +1,49 @@
+{
+    "code":"HF_ml",
+    "path":"/ML/Diagnosis/HF1",
+    "type":"assertion",
+    "description":"Model trained in HF patients",
+    "blob":{
+       "positive_patient_set":[
+          "p1"
+       ],
+       "negative_patient_set":[
+          "n1"
+       ],
+       "data_paths":[
+          "icd9"
+       ],
+       "label_paths":[
+          "/heart_failure"
+       ],
+       "feature_selection_count":10,
+       "time_buffer":30
+    }
+  }
+
+  Job - Build Model
+{ "input": {"path": "/ML/Diagnosis/HF1"}, "jobType": "ml-build_ps"}
+
+
+{
+   "code":"HF_ml1",
+   "path":"/ML/Diagnosis/HF2",
+   "type":"assertion",
+   "description":"Model trained in HF patients",
+   "blob":{
+      "positive_patient_set":[
+         "p1"
+      ],
+      "negative_patient_set":[
+         "n1"
+      ],
+      "data_paths":[
+         "icd9","lab","icd10","med"
+      ],
+      "label_paths":[
+         "/heart_failure"
+      ],
+      "feature_selection_count":30,
+      "time_buffer":30
+   }
+ }

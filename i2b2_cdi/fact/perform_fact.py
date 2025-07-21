@@ -63,7 +63,7 @@ def fact_load_from_dir(config):
     rowErrDf = pd.DataFrame()
     factsErrorsList = []
     newFactFileList,mainErrDf = validate_fact_files(config)
-    logger.info('{} {}',newFactFileList,mainErrDf)
+    logger.info('{} {}',newFactFileList,mainErrDf if len(mainErrDf)>0 else 'No errors' )
     if len(newFactFileList)>0:
         # Load patient mapping
         #TBD =================================================================================

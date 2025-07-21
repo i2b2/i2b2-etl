@@ -145,3 +145,4 @@ bcp/
 data/synthea
 
 err.log
+logs
