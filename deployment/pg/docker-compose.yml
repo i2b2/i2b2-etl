@@ -14,8 +14,8 @@ services:
       - i2b2-net
 
   i2b2-etl:
-        #image: i2b2/i2b2-etl:${I2B2_ETL_TAG}
-        image: i2b2/i2b2-etl:local-v1
+        image: i2b2/i2b2-etl:${I2B2_ETL_TAG}
+        #image: i2b2/i2b2-etl:local-v1
         container_name: i2b2-etl
         #restart: unless-stopped
         environment:
@@ -86,8 +86,8 @@ services:
             - i2b2c-web
 
   i2b2-jupyter:
-        #image: i2b2/i2b2-etl:${I2B2_ETL_TAG}
-        image: i2b2/i2b2-etl:local-v1
+        image: i2b2/i2b2-etl:${I2B2_ETL_TAG}
+        #image: i2b2/i2b2-etl:local-v1
         container_name: i2b2-jupyter
         #restart: unless-stopped
         environment:
@@ -162,8 +162,8 @@ services:
             - i2b2c-web
 
   i2b2-ml:
-        #image: i2b2/i2b2-etl:${I2B2_ETL_TAG}
-        image: i2b2/i2b2-etl:local-v1
+        image: i2b2/i2b2-etl:${I2B2_ETL_TAG}
+        #image: i2b2/i2b2-etl:local-v1
         container_name: i2b2-ml
         #restart: unless-stopped
         environment:
