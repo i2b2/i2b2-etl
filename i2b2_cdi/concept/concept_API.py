@@ -132,7 +132,9 @@ def deleteConcept(request, crc_ds, ont_ds,cpath=None):
         return response
     except Exception as e:
         logger.error(e)
-        return e
+        return  ("Concept Deletion Failed", 500)
+    
+
 def editConcept(data, request, crc_ds, ont_ds):
     cpath = request.args.get('cpath')
     hpath = request.args.get('hpath')
@@ -235,7 +237,7 @@ def generate_load_csv(data, crc_db, ont_db):
         else:
             crc_ds=I2b2crcDataSource(config)
             crc_ds.database = crc_db
-            path = humanPathToCodedPath(crc_db, formatted_path, code)
+            path = humanPathToCodedPath(crc_db, formatted_path)
             response = (json.dumps(response), 200)
         return response
     except Exception as err:

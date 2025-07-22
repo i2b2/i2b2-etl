@@ -26,7 +26,7 @@ def initJob():
     logger.info('Listening to job table for picking jobs of all types excluding : {0}.\nPress Ctrl+{1} to exit'.format(typeList if typeList is not None else checklist,'Break' if os.name == 'nt' else 'C'))
 
 def computeJob(jobExecutor):
-    jobList = jobExecutor.watchJob()
+    jobList = jobExecutor.jobList()
     if jobList:
         for row in jobList:
             if(os.environ['CRC_DB_TYPE']=='pg'):
@@ -57,7 +57,7 @@ def computeJob(jobExecutor):
                 if jobExecutor.update_status('PENDING', 'PROCESSING', jobId, None):
                     with jobExecutor.crc_ds as cursor:
                         if(os.environ['CRC_DB_TYPE']=='pg'):
-                            cursor.execute("SELECT concept_cd from "+projectName+".concept_dimension where concept_path = '"+conceptPath +"'") #+ #.replace("\\\\","\\")+"'")
+                            cursor.execute("SELECT concept_cd from "+projectName+".concept_dimension where concept_path = '"+conceptPath +"'") 
                         if(os.environ['CRC_DB_TYPE']=='mssql'):
                             cursor.execute("SELECT concept_cd from "+projectName+".dbo.CONCEPT_DIMENSION where concept_path = '"+conceptPath.replace("\\\\","\\")+"'")
                         conceptList=cursor.fetchall()
@@ -72,8 +72,9 @@ def computeJob(jobExecutor):
                                             logger.info("inside jobwatcher compute job before importing module ")
                                             module = jobExecutor.dynamic_engine_importer(m, dType+"Engine")
                                             jobExecutor.delete_facts(projectName, conceptCode)
-                                            engineObj = module()
-                                            engineObj.run(jobId, projectName, input, conceptCode, conceptPath, host, row[9])
+                                            engineObj = module(jobId)
+                                            engineObj.output=engineObj.run(jobId, projectName, input, conceptCode, conceptPath, host, row[9])
+                                            engineObj.save_output()
                                             jobExecutor.update_status('PROCESSING', 'COMPLETED', jobId, None )
                                             
                                             logger.success('COMPLETED {} Job for job_id = {} for project = {}'.format(jobType, jobId, projectName))
@@ -84,6 +85,7 @@ def computeJob(jobExecutor):
                                             jobExecutor.delete_facts(projectName, conceptCode)
                                             engineObj = module()
                                             engineObj.run(jobId, projectName, conceptBlob, conceptCode, conceptPath, host)
+                                            engineObj.save_output()
                                             jobExecutor.update_status('PROCESSING', 'COMPLETED', jobId, None)
                                             logger.success('COMPLETED {} Job for job_id = {} for project = {}'.format(row.definition_type, jobId, projectName))
                                             break                            
@@ -92,9 +94,9 @@ def computeJob(jobExecutor):
                     except Exception as error:
                         error_msg = str(error).replace('\'','"')
                         if(os.environ['CRC_DB_TYPE']=='pg'):
-                            logger.error('ERROR in {} Job for job_id = {} for project = {} : {}'.format(jobType, jobId, projectName, error_msg))
+                            logger.exception('ERROR in {} Job for job_id = {} for project = {} : {}'.format(jobType, jobId, projectName, error_msg))
                         if(os.environ['CRC_DB_TYPE']=='mssql'):
-                            logger.error('ERROR in {} Job for job_id = {} for project = {} : {}'.format(row.definition_type, jobId, projectName, error_msg))
+                            logger.exception('ERROR in {} Job for job_id = {} for project = {} : {}'.format(row.definition_type, jobId, projectName, error_msg))
                         jobExecutor.update_status('PROCESSING', 'ERROR', jobId, error_msg)
 
 if __name__ == '__main__':

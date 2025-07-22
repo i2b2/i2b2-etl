@@ -139,6 +139,8 @@ def concept_load_from_dir(config):
             # calling the bcp function for uploading data in metaData(I2B2) and tableAccess
             # call functions of converting table access and meta data 
             if config.sql_upload or config.crc_db_type=='pg':
+                #print(ont)##delete
+                
                 sqlArr=getOntologySql(ont,existing_ont,input_dir,config)
                 #metadata_sql,concept_sql,table_access_sql
 

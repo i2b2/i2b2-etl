@@ -46,6 +46,11 @@ COPY requirements.txt requirements.txt
 RUN /usr/src/app/.venv/bin/pip install --upgrade  pip 
 RUN /usr/src/app/.venv/bin/pip install --upgrade Cython 
 RUN /usr/src/app/.venv/bin/pip install -r requirements.txt 
+
+RUN pip install --upgrade pip && 
+            pip install -U imbalanced-learn mlflow xgboost scikit-learn pandas &&
+            pip uninstall --yes scikit-learn &&
+            pip install scikit-learn==1.3.2 &&
 COPY . .
 # Default command
 CMD ["/bin/bash"]
